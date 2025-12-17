@@ -18,11 +18,11 @@ final class CaptureDeviceManager: ObservableObject {
 
     func refreshVideoDevices() {
         let discoverySession = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInWideAngleCamera, .external],
+            deviceTypes: [.external],
             mediaType: .video,
             position: .unspecified
         )
-        videoDevices = discoverySession.devices.filter { !isBuiltInCamera($0) }
+        videoDevices = discoverySession.devices.filter { isExternalCaptureDevice($0) && !isBuiltInCamera($0) }
     }
 
     private func isBuiltInCamera(_ device: AVCaptureDevice) -> Bool {
@@ -42,5 +42,9 @@ final class CaptureDeviceManager: ObservableObject {
             return false
         }
         #endif
+    }
+
+    private func isExternalCaptureDevice(_ device: AVCaptureDevice) -> Bool {
+        device.deviceType == .external
     }
 }
