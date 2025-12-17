@@ -11,9 +11,11 @@ import Foundation
 
 final class CaptureDeviceManager: ObservableObject {
     @Published private(set) var videoDevices: [AVCaptureDevice] = []
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         refreshVideoDevices()
+        startObservingDeviceChanges()
     }
 
     func refreshVideoDevices() {
@@ -46,5 +48,19 @@ final class CaptureDeviceManager: ObservableObject {
 
     private func isExternalCaptureDevice(_ device: AVCaptureDevice) -> Bool {
         device.deviceType == .external
+    }
+
+    private func startObservingDeviceChanges() {
+        let center = NotificationCenter.default
+        let connected = center.publisher(for: AVCaptureDevice.wasConnectedNotification)
+        let disconnected = center.publisher(for: AVCaptureDevice.wasDisconnectedNotification)
+
+        connected
+            .merge(with: disconnected)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshVideoDevices()
+            }
+            .store(in: &cancellables)
     }
 }
