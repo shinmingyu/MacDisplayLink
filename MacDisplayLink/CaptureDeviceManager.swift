@@ -22,6 +22,25 @@ final class CaptureDeviceManager: ObservableObject {
             mediaType: .video,
             position: .unspecified
         )
-        videoDevices = discoverySession.devices
+        videoDevices = discoverySession.devices.filter { !isBuiltInCamera($0) }
+    }
+
+    private func isBuiltInCamera(_ device: AVCaptureDevice) -> Bool {
+        #if os(macOS)
+        return device.deviceType == .builtInWideAngleCamera
+        #else
+        switch device.deviceType {
+        case .builtInWideAngleCamera,
+             .builtInUltraWideCamera,
+             .builtInTelephotoCamera,
+             .builtInDualCamera,
+             .builtInDualWideCamera,
+             .builtInTripleCamera,
+             .builtInTrueDepthCamera:
+            return true
+        default:
+            return false
+        }
+        #endif
     }
 }
