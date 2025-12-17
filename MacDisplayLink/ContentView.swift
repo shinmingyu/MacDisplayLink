@@ -11,6 +11,7 @@ import AVFoundation
 
 struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
+    @StateObject private var sessionManager = VideoCaptureSessionManager()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -32,6 +33,12 @@ struct ContentView: View {
             }
         }
         .padding()
+        .onAppear {
+            sessionManager.configureSession(with: deviceManager.videoDevices.first)
+        }
+        .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
+            sessionManager.configureSession(with: deviceManager.videoDevices.first)
+        }
     }
 }
 
