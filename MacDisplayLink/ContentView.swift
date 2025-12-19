@@ -40,10 +40,21 @@ struct ContentView: View {
                     .font(.headline)
 
                 if sessionManager.isConfigured {
-                    VideoPreviewView(session: sessionManager.session)
-                        .frame(minHeight: 240)
-                        .background(.black.opacity(0.1))
-                        .cornerRadius(8)
+                    ZStack {
+                        VideoPreviewView(session: sessionManager.session)
+                            .frame(minHeight: 240)
+                            .background(.black.opacity(0.1))
+                            .cornerRadius(8)
+
+                        if !sessionManager.hasVideoSignal {
+                            Text("No video signal")
+                                .font(.headline)
+                                .padding()
+                                .background(Color.black.opacity(0.6))
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                    }
                 } else if let error = sessionManager.configurationError {
                     Text("Video error: \(error)")
                         .foregroundStyle(.red)

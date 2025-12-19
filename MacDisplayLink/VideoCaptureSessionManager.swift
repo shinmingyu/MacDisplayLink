@@ -15,6 +15,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
     @Published private(set) var isConfigured = false
     @Published private(set) var configurationError: String?
     @Published private(set) var lastVideoFormat: CMFormatDescription?
+    @Published private(set) var hasVideoSignal = false
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
@@ -29,6 +30,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
         guard let device else {
             isConfigured = false
             configurationError = "No capture device available."
+            hasVideoSignal = false
             return
         }
 
@@ -54,12 +56,14 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
         guard session.canAddOutput(videoOutput) else {
             isConfigured = false
             configurationError = "Unable to add video data output."
+            hasVideoSignal = false
             return
         }
         session.addOutput(videoOutput)
 
         isConfigured = true
         configurationError = nil
+        hasVideoSignal = false
     }
 
     func startSession() {
@@ -82,6 +86,7 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
         if let format = CMSampleBufferGetFormatDescription(sampleBuffer) {
             DispatchQueue.main.async { [weak self] in
                 self?.lastVideoFormat = format
+                self?.hasVideoSignal = true
             }
         }
     }
