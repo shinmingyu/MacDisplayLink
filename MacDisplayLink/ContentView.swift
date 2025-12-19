@@ -54,10 +54,12 @@ struct ContentView: View {
         .padding()
         .onAppear {
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            sessionManager.startSession()
             audioManager.start()
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            sessionManager.startSession()
         }
     }
 }
