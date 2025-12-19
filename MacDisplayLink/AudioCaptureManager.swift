@@ -17,6 +17,7 @@ final class AudioCaptureManager: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var lastAudioFormat: CMFormatDescription?
     @Published private(set) var isMonitoring = false
+    @Published private(set) var volume: Float = 1.0
 
     private let audioOutput = AVCaptureAudioDataOutput()
     private let audioQueue = DispatchQueue(label: "AudioCaptureManager.queue")
@@ -67,6 +68,10 @@ final class AudioCaptureManager: NSObject, ObservableObject {
             audioRenderer.requestMediaDataWhenReady(on: rendererQueue) { }
             didRequestMediaData = true
         }
+        rendererQueue.async { [weak self] in
+            guard let self else { return }
+            self.audioRenderer.volume = self.volume
+        }
 
         isRunning = session.isRunning
         lastError = nil
@@ -79,6 +84,14 @@ final class AudioCaptureManager: NSObject, ObservableObject {
         audioRenderer.flush()
         isRunning = false
         isMonitoring = false
+    }
+
+    func setVolume(_ newValue: Float) {
+        let clamped = max(0, min(1, newValue))
+        volume = clamped
+        rendererQueue.async { [weak self] in
+            self?.audioRenderer.volume = clamped
+        }
     }
 }
 

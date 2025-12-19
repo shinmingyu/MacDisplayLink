@@ -79,6 +79,19 @@ struct ContentView: View {
                 if audioManager.isRunning {
                     Text("Audio input active")
                         .foregroundStyle(.secondary)
+                    HStack {
+                        Text("Volume")
+                        Slider(
+                            value: Binding(
+                                get: { audioManager.volume },
+                                set: { audioManager.setVolume($0) }
+                            ),
+                            in: 0...1
+                        )
+                        Text(String(format: "%.0f%%", audioManager.volume * 100))
+                            .frame(width: 60, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                    }
                 } else if let error = audioManager.lastError {
                     Text("Audio error: \(error)")
                         .foregroundStyle(.red)
