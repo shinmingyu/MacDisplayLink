@@ -16,6 +16,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
     @Published private(set) var configurationError: String?
     @Published private(set) var lastVideoFormat: CMFormatDescription?
     @Published private(set) var hasVideoSignal = false
+    @Published private(set) var videoSignalInfo: String?
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
@@ -31,6 +32,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
             isConfigured = false
             configurationError = "No capture device available."
             hasVideoSignal = false
+            videoSignalInfo = nil
             return
         }
 
@@ -57,6 +59,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
             isConfigured = false
             configurationError = "Unable to add video data output."
             hasVideoSignal = false
+            videoSignalInfo = nil
             return
         }
         session.addOutput(videoOutput)
@@ -64,6 +67,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
         isConfigured = true
         configurationError = nil
         hasVideoSignal = false
+        videoSignalInfo = nil
     }
 
     func startSession() {
@@ -87,7 +91,25 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
             DispatchQueue.main.async { [weak self] in
                 self?.lastVideoFormat = format
                 self?.hasVideoSignal = true
+                self?.videoSignalInfo = Self.describe(format: format, connection: connection)
             }
+        }
+    }
+
+    private static func describe(format: CMFormatDescription, connection: AVCaptureConnection) -> String {
+        let dimensions = CMVideoFormatDescriptionGetDimensions(format)
+        let fps: Double?
+        let duration = connection.videoMinFrameDuration
+        if duration.timescale > 0 && duration.value > 0 {
+            fps = Double(duration.timescale) / Double(duration.value)
+        } else {
+            fps = nil
+        }
+
+        if let fps {
+            return "\(dimensions.width)x\(dimensions.height) @ \(String(format: "%.2f", fps)) fps"
+        } else {
+            return "\(dimensions.width)x\(dimensions.height)"
         }
     }
 }

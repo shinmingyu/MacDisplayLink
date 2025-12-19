@@ -55,6 +55,12 @@ struct ContentView: View {
                                 .cornerRadius(8)
                         }
                     }
+
+                    if let info = sessionManager.videoSignalInfo {
+                        Text("Signal: \(info)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 } else if let error = sessionManager.configurationError {
                     Text("Video error: \(error)")
                         .foregroundStyle(.red)
