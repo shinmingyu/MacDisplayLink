@@ -36,6 +36,26 @@ struct ContentView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
+                Text("Video Preview")
+                    .font(.headline)
+
+                if sessionManager.isConfigured {
+                    VideoPreviewView(session: sessionManager.session)
+                        .frame(minHeight: 240)
+                        .background(.black.opacity(0.1))
+                        .cornerRadius(8)
+                } else if let error = sessionManager.configurationError {
+                    Text("Video error: \(error)")
+                        .foregroundStyle(.red)
+                } else {
+                    Text("No video session configured.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Audio Capture")
                     .font(.headline)
 
