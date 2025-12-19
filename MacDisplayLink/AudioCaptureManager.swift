@@ -16,9 +16,13 @@ final class AudioCaptureManager: NSObject, ObservableObject {
     @Published private(set) var isRunning = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastAudioFormat: CMFormatDescription?
+    @Published private(set) var isMonitoring = false
 
     private let audioOutput = AVCaptureAudioDataOutput()
     private let audioQueue = DispatchQueue(label: "AudioCaptureManager.queue")
+    private let rendererQueue = DispatchQueue(label: "AudioCaptureManager.renderer")
+    private let audioRenderer = AVSampleBufferAudioRenderer()
+    private var didRequestMediaData = false
 
     func start(with device: AVCaptureDevice? = AVCaptureDevice.default(for: .audio)) {
         session.stopRunning()
@@ -59,13 +63,22 @@ final class AudioCaptureManager: NSObject, ObservableObject {
         session.commitConfiguration()
         session.startRunning()
 
+        if !didRequestMediaData {
+            audioRenderer.requestMediaDataWhenReady(on: rendererQueue) { }
+            didRequestMediaData = true
+        }
+
         isRunning = session.isRunning
         lastError = nil
+        isMonitoring = true
     }
 
     func stop() {
         session.stopRunning()
+        audioRenderer.stopRequestingMediaData()
+        audioRenderer.flush()
         isRunning = false
+        isMonitoring = false
     }
 }
 
@@ -79,6 +92,12 @@ extension AudioCaptureManager: AVCaptureAudioDataOutputSampleBufferDelegate {
             DispatchQueue.main.async { [weak self] in
                 self?.lastAudioFormat = format
             }
+        }
+
+        rendererQueue.async { [weak self] in
+            guard let self else { return }
+            guard self.audioRenderer.isReadyForMoreMediaData else { return }
+            self.audioRenderer.enqueue(sampleBuffer)
         }
     }
 }
