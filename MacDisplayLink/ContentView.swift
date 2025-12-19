@@ -12,6 +12,7 @@ import AVFoundation
 struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
     @StateObject private var sessionManager = VideoCaptureSessionManager()
+    @StateObject private var audioManager = AudioCaptureManager()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -31,10 +32,29 @@ struct ContentView: View {
                     }
                 }
             }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Audio Capture")
+                    .font(.headline)
+
+                if audioManager.isRunning {
+                    Text("Audio input active")
+                        .foregroundStyle(.secondary)
+                } else if let error = audioManager.lastError {
+                    Text("Audio error: \(error)")
+                        .foregroundStyle(.red)
+                } else {
+                    Text("Audio input stopped")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding()
         .onAppear {
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            audioManager.start()
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
