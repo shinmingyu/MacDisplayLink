@@ -92,6 +92,14 @@ struct ContentView: View {
                             .frame(width: 60, alignment: .trailing)
                             .foregroundStyle(.secondary)
                     }
+                    HStack {
+                        Text("Level")
+                        ProgressView(value: audioManager.meterLevel)
+                            .frame(maxWidth: 160)
+                        Text(String(format: "%.0f%%", audioManager.meterLevel * 100))
+                            .frame(width: 60, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                    }
                 } else if let error = audioManager.lastError {
                     Text("Audio error: \(error)")
                         .foregroundStyle(.red)
