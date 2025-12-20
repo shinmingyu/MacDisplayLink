@@ -119,10 +119,18 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("Level")
+                        Text("Level (avg)")
                         ProgressView(value: audioManager.meterLevel)
                             .frame(maxWidth: 160)
                         Text(String(format: "%.0f%%", audioManager.meterLevel * 100))
+                            .frame(width: 60, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("Level (peak)")
+                        ProgressView(value: audioManager.meterPeakLevel)
+                            .frame(maxWidth: 160)
+                        Text(String(format: "%.0f%%", audioManager.meterPeakLevel * 100))
                             .frame(width: 60, alignment: .trailing)
                             .foregroundStyle(.secondary)
                     }
