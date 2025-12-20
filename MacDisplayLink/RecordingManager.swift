@@ -19,6 +19,7 @@ final class RecordingManager: ObservableObject {
 
     @Published private(set) var state: State = .idle
     @Published private(set) var outputURL: URL?
+    var preferredFileType: AVFileType = .mp4
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
     private var writer: AVAssetWriter?
@@ -33,8 +34,11 @@ final class RecordingManager: ObservableObject {
     }
 
     func startNewRecording() {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("recording.mp4")
-        startRecording(to: url, fileType: .mp4)
+        let fileName = "recording"
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(fileName)
+            .appendingPathExtension(outputExtension(for: preferredFileType))
+        startRecording(to: url, fileType: preferredFileType)
     }
 
     func startRecording(to url: URL, fileType: AVFileType = .mp4) {
@@ -168,5 +172,12 @@ final class RecordingManager: ObservableObject {
         let input = AVAssetWriterInput(mediaType: .audio, outputSettings: settings)
         input.expectsMediaDataInRealTime = true
         return input
+    }
+
+    private func outputExtension(for type: AVFileType) -> String {
+        switch type {
+        case .mov: return "mov"
+        default: return "mp4"
+        }
     }
 }
