@@ -10,6 +10,10 @@ import Combine
 import Foundation
 
 final class RecordingManager: ObservableObject {
+    private enum Constants {
+        static let outputDirectoryKey = "RecordingManager.outputDirectory"
+    }
+
     enum State {
         case idle
         case recording
@@ -32,6 +36,10 @@ final class RecordingManager: ObservableObject {
     private var audioInput: AVAssetWriterInput?
     private var startTime: CMTime?
     private var lastTimestamp: CMTime?
+
+    init() {
+        loadSavedOutputDirectory()
+    }
 
     var isRecording: Bool {
         if case .recording = state { return true }
@@ -240,7 +248,24 @@ final class RecordingManager: ObservableObject {
     }
 
     func setCustomOutputDirectory(_ url: URL?) {
-        customOutputDirectory = url
+        customOutputDirectory = url?.standardizedFileURL
+        persistOutputDirectory(url)
+    }
+
+    private func persistOutputDirectory(_ url: URL?) {
+        let defaults = UserDefaults.standard
+        if let url {
+            defaults.set(url.path, forKey: Constants.outputDirectoryKey)
+        } else {
+            defaults.removeObject(forKey: Constants.outputDirectoryKey)
+        }
+    }
+
+    private func loadSavedOutputDirectory() {
+        let defaults = UserDefaults.standard
+        if let path = defaults.string(forKey: Constants.outputDirectoryKey) {
+            customOutputDirectory = URL(fileURLWithPath: path).standardizedFileURL
+        }
     }
 
     private func updateStatus(with timestamp: CMTime) {
