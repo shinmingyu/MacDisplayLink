@@ -252,6 +252,13 @@ final class RecordingManager: ObservableObject {
         persistOutputDirectory(url)
     }
 
+    func resolvedOutputDirectory() -> URL? {
+        if let customOutputDirectory {
+            return customOutputDirectory
+        }
+        return defaultDirectoryURL()
+    }
+
     private func persistOutputDirectory(_ url: URL?) {
         let defaults = UserDefaults.standard
         if let url {

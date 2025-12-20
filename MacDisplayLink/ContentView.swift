@@ -9,12 +9,14 @@
 import AVFoundation
 import SwiftUI
 import AppKit
+import AppKit
 
 struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
     @StateObject private var sessionManager = VideoCaptureSessionManager()
     @StateObject private var audioManager = AudioCaptureManager()
     @StateObject private var recordingManager = RecordingManager()
+    @State private var screenshotMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -173,6 +175,19 @@ struct ContentView: View {
                     }
                 }
 
+                HStack {
+                    Button("Capture Screenshot") {
+                        captureScreenshot()
+                    }
+                    if let message = screenshotMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Save path")
                     HStack {
@@ -299,6 +314,44 @@ struct ContentView: View {
         guard linear > 0 else { return "-inf dB" }
         let db = 20 * log10(Double(linear))
         return String(format: "%.1f dB", db)
+    }
+
+    private func captureScreenshot() {
+        guard let image = sessionManager.captureScreenshotImage() else {
+            screenshotMessage = "No video frame available."
+            return
+        }
+        guard let directory = recordingManager.resolvedOutputDirectory() else {
+            screenshotMessage = "Unable to resolve output directory."
+            return
+        }
+
+        let fileName = "screenshot-\(timestampString()).png"
+        let url = directory.appendingPathComponent(fileName)
+
+        guard let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let pngData = rep.representation(using: .png, properties: [:]) else {
+            screenshotMessage = "Failed to encode screenshot."
+            return
+        }
+
+        do {
+            try pngData.write(to: url)
+            screenshotMessage = "Saved \(url.lastPathComponent)"
+        } catch {
+            screenshotMessage = "Save failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func timestampString() -> String {
+        let formatter: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "yyyyMMdd-HHmmss"
+            f.locale = Locale(identifier: "en_US_POSIX")
+            return f
+        }()
+        return formatter.string(from: Date())
     }
 
     private func chooseOutputDirectory() {
