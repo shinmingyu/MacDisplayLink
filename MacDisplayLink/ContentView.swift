@@ -102,10 +102,45 @@ struct ContentView: View {
                             .foregroundStyle(.secondary)
                     }
                 } else if let error = audioManager.lastError {
-                    Text("Audio error: \(error)")
-                        .foregroundStyle(.red)
+                        Text("Audio error: \(error)")
+                            .foregroundStyle(.red)
                 } else {
                     Text("Audio input stopped")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Recording")
+                    .font(.headline)
+
+                HStack {
+                    Button(recordingManager.isRecording ? "Stop Recording" : "Start Recording") {
+                        if recordingManager.isRecording {
+                            recordingManager.stopRecording()
+                        } else {
+                            recordingManager.startNewRecording()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    switch recordingManager.state {
+                    case .idle:
+                        Text("Idle").foregroundStyle(.secondary)
+                    case .recording:
+                        Text("Recording...").foregroundStyle(.green)
+                    case .finishing:
+                        Text("Finishing...").foregroundStyle(.secondary)
+                    case .failed(let message):
+                        Text("Failed: \(message)").foregroundStyle(.red)
+                    }
+                }
+
+                if let output = recordingManager.outputURL {
+                    Text("Output: \(output.lastPathComponent)")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }

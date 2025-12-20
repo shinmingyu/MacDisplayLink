@@ -26,6 +26,17 @@ final class RecordingManager: ObservableObject {
     private var audioInput: AVAssetWriterInput?
     private var startTime: CMTime?
 
+    var isRecording: Bool {
+        if case .recording = state { return true }
+        if case .finishing = state { return true }
+        return false
+    }
+
+    func startNewRecording() {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("recording.mp4")
+        startRecording(to: url, fileType: .mp4)
+    }
+
     func startRecording(to url: URL, fileType: AVFileType = .mp4) {
         queue.async { [weak self] in
             guard let self else { return }
