@@ -10,6 +10,10 @@ import Combine
 import Foundation
 
 final class RecordingManager: ObservableObject {
+    private enum Constants {
+        static let outputDirectoryKey = "RecordingManager.outputDirectory"
+    }
+
     enum State {
         case idle
         case recording
@@ -21,7 +25,10 @@ final class RecordingManager: ObservableObject {
     @Published private(set) var outputURL: URL?
     @Published private(set) var recordedDuration: TimeInterval = 0
     @Published private(set) var recordedFileSize: Int64 = 0
-    var preferredFileType: AVFileType = .mp4
+    @Published private(set) var preferredFileType: AVFileType = .mp4
+    @Published private(set) var preferredVideoCodec: AVVideoCodecType = .h264
+    @Published private(set) var preferredVideoBitrate: Int = 8_000_000
+    @Published private(set) var customOutputDirectory: URL?
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
     private var writer: AVAssetWriter?
@@ -29,6 +36,10 @@ final class RecordingManager: ObservableObject {
     private var audioInput: AVAssetWriterInput?
     private var startTime: CMTime?
     private var lastTimestamp: CMTime?
+
+    init() {
+        loadSavedOutputDirectory()
+    }
 
     var isRecording: Bool {
         if case .recording = state { return true }
@@ -38,7 +49,7 @@ final class RecordingManager: ObservableObject {
 
     func startNewRecording() {
         let fileName = makeTimestampedFileName()
-        let directory = defaultDirectoryURL() ?? FileManager.default.temporaryDirectory
+        let directory = customOutputDirectory ?? defaultDirectoryURL() ?? FileManager.default.temporaryDirectory
         let url = directory
             .appendingPathComponent(fileName)
             .appendingPathExtension(outputExtension(for: preferredFileType))
@@ -161,9 +172,12 @@ final class RecordingManager: ObservableObject {
     private func makeVideoInput(format: CMFormatDescription) -> AVAssetWriterInput? {
         let dimensions = CMVideoFormatDescriptionGetDimensions(format)
         let settings: [String: Any] = [
-            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoCodecKey: preferredVideoCodec,
             AVVideoWidthKey: Int(dimensions.width),
-            AVVideoHeightKey: Int(dimensions.height)
+            AVVideoHeightKey: Int(dimensions.height),
+            AVVideoCompressionPropertiesKey: [
+                AVVideoAverageBitRateKey: preferredVideoBitrate
+            ]
         ]
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
         input.expectsMediaDataInRealTime = true
@@ -217,6 +231,41 @@ final class RecordingManager: ObservableObject {
             return f
         }()
         return "recording-\(formatter.string(from: Date()))"
+    }
+
+    func setPreferredFileType(_ type: AVFileType) {
+        preferredFileType = type
+    }
+
+    func setPreferredVideoCodec(_ codec: AVVideoCodecType) {
+        preferredVideoCodec = codec
+    }
+
+    func setPreferredVideoBitrate(_ bitrate: Int) {
+        // Clamp to a reasonable range (1 Mbps ... 100 Mbps) to avoid invalid settings.
+        let clamped = max(1_000_000, min(bitrate, 100_000_000))
+        preferredVideoBitrate = clamped
+    }
+
+    func setCustomOutputDirectory(_ url: URL?) {
+        customOutputDirectory = url?.standardizedFileURL
+        persistOutputDirectory(url)
+    }
+
+    private func persistOutputDirectory(_ url: URL?) {
+        let defaults = UserDefaults.standard
+        if let url {
+            defaults.set(url.path, forKey: Constants.outputDirectoryKey)
+        } else {
+            defaults.removeObject(forKey: Constants.outputDirectoryKey)
+        }
+    }
+
+    private func loadSavedOutputDirectory() {
+        let defaults = UserDefaults.standard
+        if let path = defaults.string(forKey: Constants.outputDirectoryKey) {
+            customOutputDirectory = URL(fileURLWithPath: path).standardizedFileURL
+        }
     }
 
     private func updateStatus(with timestamp: CMTime) {

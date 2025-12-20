@@ -6,8 +6,9 @@
 //
 //
 
-import SwiftUI
 import AVFoundation
+import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
@@ -41,6 +42,27 @@ struct ContentView: View {
                     .font(.headline)
 
                 if sessionManager.isConfigured {
+                    if sessionManager.availableFormats.isEmpty {
+                        Text("No format info available")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Supported formats")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Picker("Format", selection: Binding(
+                                get: { sessionManager.selectedFormatID ?? sessionManager.availableFormats.first?.id ?? "" },
+                                set: { sessionManager.selectedFormatID = $0 }
+                            )) {
+                                ForEach(sessionManager.availableFormats) { option in
+                                    Text(formatVideoOption(option))
+                                        .tag(option.id)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+                    }
+
                     ZStack {
                         VideoPreviewView(session: sessionManager.session)
                             .frame(minHeight: 240)
@@ -84,20 +106,32 @@ struct ContentView: View {
                         Text("Volume")
                         Slider(
                             value: Binding(
-                                get: { audioManager.volume },
-                                set: { audioManager.setVolume($0) }
+                                get: { audioManager.displayVolume },
+                                set: { audioManager.setVolumeFromUI($0) }
                             ),
                             in: 0...1
                         )
-                        Text(String(format: "%.0f%%", audioManager.volume * 100))
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(String(format: "%.0f%%", audioManager.displayVolume * 100))
+                            Text(formatDb(from: audioManager.volume))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(width: 80, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("Level (avg)")
+                        ProgressView(value: audioManager.meterLevel)
+                            .frame(maxWidth: 160)
+                        Text(String(format: "%.0f%%", audioManager.meterLevel * 100))
                             .frame(width: 60, alignment: .trailing)
                             .foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("Level")
-                        ProgressView(value: audioManager.meterLevel)
+                        Text("Level (peak)")
+                        ProgressView(value: audioManager.meterPeakLevel)
                             .frame(maxWidth: 160)
-                        Text(String(format: "%.0f%%", audioManager.meterLevel * 100))
+                        Text(String(format: "%.0f%%", audioManager.meterPeakLevel * 100))
                             .frame(width: 60, alignment: .trailing)
                             .foregroundStyle(.secondary)
                     }
@@ -125,6 +159,7 @@ struct ContentView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut("r", modifiers: [.command])
 
                     switch recordingManager.state {
                     case .idle:
@@ -136,6 +171,58 @@ struct ContentView: View {
                     case .failed(let message):
                         Text("Failed: \(message)").foregroundStyle(.red)
                     }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Save path")
+                    HStack {
+                        Text(outputDirectoryLabel())
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button("Choose folder") {
+                            chooseOutputDirectory()
+                        }
+                    }
+                }
+
+                HStack {
+                    Text("Format")
+                    Picker("Format", selection: Binding(
+                        get: { recordingManager.preferredFileType },
+                        set: { recordingManager.setPreferredFileType($0) }
+                    )) {
+                        Text("MP4").tag(AVFileType.mp4)
+                        Text("MOV").tag(AVFileType.mov)
+                    }
+                    .pickerStyle(.segmented)
+                }
+                HStack {
+                    Text("Codec")
+                    Picker("Codec", selection: Binding(
+                        get: { recordingManager.preferredVideoCodec },
+                        set: { recordingManager.setPreferredVideoCodec($0) }
+                    )) {
+                        Text("H.264").tag(AVVideoCodecType.h264)
+                        Text("H.265").tag(AVVideoCodecType.hevc)
+                    }
+                    .pickerStyle(.segmented)
+                }
+                HStack {
+                    Text("Bitrate")
+                    Slider(
+                        value: Binding(
+                            get: { Double(recordingManager.preferredVideoBitrate) / 1_000_000 },
+                            set: { recordingManager.setPreferredVideoBitrate(Int($0 * 1_000_000)) }
+                        ),
+                        in: 1...50,
+                        step: 1
+                    )
+                    Text("\(recordingManager.preferredVideoBitrate / 1_000_000) Mbps")
+                        .frame(width: 90, alignment: .trailing)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let output = recordingManager.outputURL {
@@ -170,6 +257,9 @@ struct ContentView: View {
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
             sessionManager.startSession()
         }
+        .onChange(of: sessionManager.selectedFormatID) { _, _ in
+            sessionManager.applySelectedFormat()
+        }
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
@@ -193,6 +283,47 @@ struct ContentView: View {
         }
         let mb = kb / 1024.0
         return String(format: "%.1f MB", mb)
+    }
+
+    private func formatVideoOption(_ option: VideoFormatOption) -> String {
+        let dims = option.dimensions
+        let fps = option.maxFrameRate
+        if fps > 0 {
+            return "\(dims.width)x\(dims.height) @ \(String(format: "%.0f", fps)) fps"
+        } else {
+            return "\(dims.width)x\(dims.height)"
+        }
+    }
+
+    private func formatDb(from linear: Float) -> String {
+        guard linear > 0 else { return "-inf dB" }
+        let db = 20 * log10(Double(linear))
+        return String(format: "%.1f dB", db)
+    }
+
+    private func chooseOutputDirectory() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Select"
+
+        if panel.runModal() == .OK {
+            recordingManager.setCustomOutputDirectory(panel.url)
+        }
+    }
+
+    private func outputDirectoryLabel() -> String {
+        if let custom = recordingManager.customOutputDirectory {
+            return custom.path
+        }
+        // Reflect default directory path for clarity.
+        let fm = FileManager.default
+        let base = fm.urls(for: .moviesDirectory, in: .userDomainMask).first
+            ?? fm.urls(for: .documentDirectory, in: .userDomainMask).first
+        let defaultPath = base?.appendingPathComponent("MacDisplayLink", isDirectory: true).path
+        return defaultPath ?? "Default directory not available"
     }
 }
 

@@ -18,7 +18,9 @@ final class AudioCaptureManager: NSObject, ObservableObject {
     @Published private(set) var lastAudioFormat: CMFormatDescription?
     @Published private(set) var isMonitoring = false
     @Published private(set) var volume: Float = 1.0
+    @Published private(set) var displayVolume: Float = 1.0
     @Published private(set) var meterLevel: Float = 0.0
+    @Published private(set) var meterPeakLevel: Float = 0.0
 
     private let audioOutput = AVCaptureAudioDataOutput()
     private let audioQueue = DispatchQueue(label: "AudioCaptureManager.queue")
@@ -88,11 +90,15 @@ final class AudioCaptureManager: NSObject, ObservableObject {
         isMonitoring = false
     }
 
-    func setVolume(_ newValue: Float) {
-        let clamped = max(0, min(1, newValue))
-        volume = clamped
+    /// Accepts a UI value (0...1) and maps it to a non-linear curve for finer low-volume control.
+    func setVolumeFromUI(_ newValue: Float) {
+        let clampedDisplay = max(0, min(1, newValue))
+        displayVolume = clampedDisplay
+        let curvedVolume = pow(clampedDisplay, 2.5) // more resolution near 0
+        let finalVolume = max(0, min(1, curvedVolume))
+        volume = finalVolume
         rendererQueue.async { [weak self] in
-            self?.audioRenderer.volume = clamped
+            self?.audioRenderer.volume = finalVolume
         }
     }
 }
@@ -139,18 +145,20 @@ extension AudioCaptureManager: AVCaptureAudioDataOutputSampleBufferDelegate {
         )
         guard status == noErr else { return }
 
-        let level = computeLevel(pcmBuffer: pcmBuffer, format: asbd)
+        let levels = computeLevels(pcmBuffer: pcmBuffer, format: asbd)
         DispatchQueue.main.async { [weak self] in
-            self?.meterLevel = level
+            self?.meterLevel = levels.rms
+            self?.meterPeakLevel = levels.peak
         }
     }
 
-    private func computeLevel(pcmBuffer: AVAudioPCMBuffer, format: AudioStreamBasicDescription) -> Float {
+    private func computeLevels(pcmBuffer: AVAudioPCMBuffer, format: AudioStreamBasicDescription) -> (rms: Float, peak: Float) {
         let isFloat = (format.mFormatFlags & kAudioFormatFlagIsFloat) != 0
         let audioBuffers = UnsafeMutableAudioBufferListPointer(pcmBuffer.mutableAudioBufferList)
 
         var total: Float = 0
         var processedSamples = 0
+        var peak: Float = 0
 
         for buffer in audioBuffers {
             guard let dataPtr = buffer.mData else { continue }
@@ -162,6 +170,7 @@ extension AudioCaptureManager: AVCaptureAudioDataOutputSampleBufferDelegate {
                 for i in 0..<sampleCount {
                     let sample = floatPtr[i]
                     total += sample * sample
+                    peak = max(peak, abs(sample))
                 }
                 processedSamples += sampleCount
             } else {
@@ -171,13 +180,14 @@ extension AudioCaptureManager: AVCaptureAudioDataOutputSampleBufferDelegate {
                 for i in 0..<sampleCount {
                     let sample = Float(int16Ptr[i]) * scale
                     total += sample * sample
+                    peak = max(peak, abs(sample))
                 }
                 processedSamples += sampleCount
             }
         }
 
-        guard processedSamples > 0 else { return 0 }
+        guard processedSamples > 0 else { return (0, 0) }
         let rms = sqrt(total / Float(processedSamples))
-        return min(1.0, max(0.0, rms))
+        return (min(1.0, max(0.0, rms)), min(1.0, max(0.0, peak)))
     }
 }
