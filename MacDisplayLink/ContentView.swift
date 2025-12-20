@@ -170,6 +170,17 @@ struct ContentView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                HStack {
+                    Text("Codec")
+                    Picker("Codec", selection: Binding(
+                        get: { recordingManager.preferredVideoCodec },
+                        set: { recordingManager.setPreferredVideoCodec($0) }
+                    )) {
+                        Text("H.264").tag(AVVideoCodecType.h264)
+                        Text("H.265").tag(AVVideoCodecType.hevc)
+                    }
+                    .pickerStyle(.segmented)
+                }
 
                 if let output = recordingManager.outputURL {
                     Text("Output: \(output.lastPathComponent)")

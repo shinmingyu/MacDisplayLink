@@ -22,6 +22,7 @@ final class RecordingManager: ObservableObject {
     @Published private(set) var recordedDuration: TimeInterval = 0
     @Published private(set) var recordedFileSize: Int64 = 0
     @Published private(set) var preferredFileType: AVFileType = .mp4
+    @Published private(set) var preferredVideoCodec: AVVideoCodecType = .h264
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
     private var writer: AVAssetWriter?
@@ -161,7 +162,7 @@ final class RecordingManager: ObservableObject {
     private func makeVideoInput(format: CMFormatDescription) -> AVAssetWriterInput? {
         let dimensions = CMVideoFormatDescriptionGetDimensions(format)
         let settings: [String: Any] = [
-            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoCodecKey: preferredVideoCodec,
             AVVideoWidthKey: Int(dimensions.width),
             AVVideoHeightKey: Int(dimensions.height)
         ]
@@ -221,6 +222,10 @@ final class RecordingManager: ObservableObject {
 
     func setPreferredFileType(_ type: AVFileType) {
         preferredFileType = type
+    }
+
+    func setPreferredVideoCodec(_ codec: AVVideoCodecType) {
+        preferredVideoCodec = codec
     }
 
     private func updateStatus(with timestamp: CMTime) {
