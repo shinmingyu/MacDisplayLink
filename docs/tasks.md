@@ -93,6 +93,40 @@
 
 ---
 
+## 리팩터링: MVVM 구조화
+
+### Phase A: 구조 뼈대 만들기
+- [ ] `Features`/`Core` 디렉터리 구조 생성
+- [ ] 서비스 프로토콜 초안 작성(`VideoSessionService`, `AudioSessionService`, `RecordingService`, `DeviceService`, `PermissionService`)
+- [ ] `AppContainer`(DI) 초안 작성 및 서비스 주입 경로 마련
+
+### Phase B: 뷰 분해 (UI 레이아웃 분리)
+- [ ] `ContentView` 섹션 분리(`DevicePickerView`, `PreviewControlsView`, `OverlayControlsView`, `AudioControlsView`, `RecordingControlsView`)
+- [ ] 공통 컴포넌트 분리(`LabeledSlider`, `ToggleRow`, `SegmentedPickerWrapper` 등)
+
+### Phase C: ViewModel 도입
+- [ ] `DevicePickerViewModel`
+- [ ] `PreviewViewModel`
+- [ ] `OverlayViewModel`
+- [ ] `AudioViewModel`
+- [ ] `RecordingViewModel`
+
+### Phase D: 서비스로 로직 이관
+- [ ] `VideoCaptureSessionManager` → `VideoSessionService`
+- [ ] `AudioCaptureManager` → `AudioSessionService`
+- [ ] `RecordingManager` → `RecordingService`
+- [ ] `CaptureDeviceManager` → `DeviceService`
+
+### Phase E: 권한/에러 처리
+- [ ] `PermissionService` 구현(카메라/마이크 체크/요청)
+- [ ] 공통 에러/알림 모델 정의 및 UI 바인딩
+
+### Phase F: 테스트/문서
+- [ ] 주요 ViewModel 단위 테스트(Mock 서비스)
+- [ ] `tasks.md`/`development-guide.md` 구조 반영 업데이트
+
+---
+
 ## 에러 처리 및 권한
 
 ### 에러 처리
