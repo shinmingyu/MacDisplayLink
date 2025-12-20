@@ -10,6 +10,13 @@ import Combine
 import Foundation
 
 final class RecordingManager: ObservableObject {
+    struct RecordingFileEntry: Identifiable {
+        let id = UUID()
+        let url: URL
+        let size: Int64
+        let createdAt: Date
+    }
+
     private enum Constants {
         static let outputDirectoryKey = "RecordingManager.outputDirectory"
     }
@@ -257,6 +264,30 @@ final class RecordingManager: ObservableObject {
             return customOutputDirectory
         }
         return defaultDirectoryURL()
+    }
+
+    func recentRecordings(limit: Int = 10) -> [RecordingFileEntry] {
+        guard let directory = resolvedOutputDirectory() else { return [] }
+        let allowedExtensions = ["mp4", "mov"]
+
+        let contents = (try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.creationDateKey, .fileSizeKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []
+
+        let entries: [RecordingFileEntry] = contents.compactMap { url in
+            guard allowedExtensions.contains(url.pathExtension.lowercased()) else { return nil }
+            let resource = try? url.resourceValues(forKeys: [.creationDateKey, .fileSizeKey])
+            let created = resource?.creationDate ?? Date.distantPast
+            let size = Int64(resource?.fileSize ?? 0)
+            return RecordingFileEntry(url: url, size: size, createdAt: created)
+        }
+
+        return entries
+            .sorted(by: { $0.createdAt > $1.createdAt })
+            .prefix(limit)
+            .map { $0 }
     }
 
     private func persistOutputDirectory(_ url: URL?) {

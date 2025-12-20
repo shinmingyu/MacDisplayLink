@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var screenshotMessage: String?
     @State private var diskSpaceMessage: String?
     @State private var isLowDiskSpace: Bool = false
+    @State private var recentRecordings: [RecordingManager.RecordingFileEntry] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -217,6 +218,34 @@ struct ContentView: View {
                             .foregroundStyle(isLowDiskSpace ? .red : .secondary)
                     }
                 }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Recent recordings")
+                        Button("Refresh") {
+                            loadRecentRecordings()
+                        }
+                    }
+                    if recentRecordings.isEmpty {
+                        Text("No recordings yet.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(recentRecordings) { entry in
+                            HStack {
+                                Text(entry.url.lastPathComponent)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(formatBytes(entry.size))
+                                    Text(formatDate(entry.createdAt))
+                                }
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
 
                 HStack {
                     Text("Format")
@@ -386,6 +415,19 @@ struct ContentView: View {
             diskSpaceMessage = "Disk check failed: \(error.localizedDescription)"
             isLowDiskSpace = false
         }
+    }
+
+    private func loadRecentRecordings() {
+        recentRecordings = recordingManager.recentRecordings(limit: 10)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "MM/dd HH:mm"
+            return f
+        }()
+        return formatter.string(from: date)
     }
 
     private func chooseOutputDirectory() {
