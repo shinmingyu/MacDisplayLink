@@ -18,6 +18,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
     @Published private(set) var hasVideoSignal = false
     @Published private(set) var videoSignalInfo: String?
     @Published private(set) var availableFormats: [VideoFormatOption] = []
+    @Published var selectedFormatID: String?
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
@@ -36,11 +37,13 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
             hasVideoSignal = false
             videoSignalInfo = nil
             availableFormats = []
+            selectedFormatID = nil
             return
         }
 
         session.sessionPreset = .high
         availableFormats = Self.buildFormats(for: device)
+        selectedFormatID = availableFormats.first?.id
 
         do {
             let input = try AVCaptureDeviceInput(device: device)
@@ -151,9 +154,17 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
     }
 }
 
-struct VideoFormatOption: Identifiable {
+struct VideoFormatOption: Identifiable, Hashable {
     let id: String
     let format: AVCaptureDevice.Format
     let dimensions: CMVideoDimensions
     let maxFrameRate: Double
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: VideoFormatOption, rhs: VideoFormatOption) -> Bool {
+        lhs.id == rhs.id
+    }
 }

@@ -49,11 +49,16 @@ struct ContentView: View {
                             Text("Supported formats")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                            ForEach(sessionManager.availableFormats) { option in
-                                Text(formatVideoOption(option))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            Picker("Format", selection: Binding(
+                                get: { sessionManager.selectedFormatID ?? sessionManager.availableFormats.first?.id ?? "" },
+                                set: { sessionManager.selectedFormatID = $0 }
+                            )) {
+                                ForEach(sessionManager.availableFormats) { option in
+                                    Text(formatVideoOption(option))
+                                        .tag(option.id)
+                                }
                             }
+                            .pickerStyle(.menu)
                         }
                     }
 
