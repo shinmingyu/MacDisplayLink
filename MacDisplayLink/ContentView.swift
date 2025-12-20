@@ -9,6 +9,7 @@
 import AVFoundation
 import SwiftUI
 import AppKit
+import Combine
 import AppKit
 
 struct ContentView: View {
@@ -25,6 +26,10 @@ struct ContentView: View {
     @State private var rotationDegrees: Double = 0
     @State private var flipHorizontal: Bool = false
     @State private var flipVertical: Bool = false
+    @State private var showTimestampOverlay: Bool = true
+    @State private var showWatermarkOverlay: Bool = false
+    @State private var watermarkText: String = "MacDisplayLink"
+    @State private var timestampText: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -91,11 +96,11 @@ struct ContentView: View {
                             }
                             .pickerStyle(.menu)
                         }
-                    }
+                }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Transform")
-                            .font(.subheadline)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Transform")
+                        .font(.subheadline)
                             .foregroundStyle(.secondary)
                         HStack {
                             Text("Rotation")
@@ -109,6 +114,17 @@ struct ContentView: View {
                             Toggle("Flip V", isOn: $flipVertical)
                         }
                     }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Overlay")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Toggle("Show timestamp", isOn: $showTimestampOverlay)
+                        HStack {
+                            Toggle("Watermark", isOn: $showWatermarkOverlay)
+                            TextField("Watermark text", text: $watermarkText)
+                                .textFieldStyle(.roundedBorder)
+                        }
+                    }
 
                     ZStack {
                         VideoPreviewView(
@@ -120,6 +136,27 @@ struct ContentView: View {
                             .frame(minHeight: 240)
                             .background(.black.opacity(0.1))
                             .cornerRadius(8)
+                            .overlay(alignment: .topTrailing) {
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    if showTimestampOverlay {
+                                        Text(timestampText)
+                                            .font(.caption)
+                                            .padding(6)
+                                            .background(Color.black.opacity(0.6))
+                                            .foregroundColor(.white)
+                                            .cornerRadius(6)
+                                    }
+                                    if showWatermarkOverlay, !watermarkText.isEmpty {
+                                        Text(watermarkText)
+                                            .font(.caption2)
+                                            .padding(6)
+                                            .background(Color.black.opacity(0.6))
+                                            .foregroundColor(.white)
+                                            .cornerRadius(6)
+                                    }
+                                }
+                                .padding(8)
+                            }
 
                         if !sessionManager.hasVideoSignal {
                             Text("No video signal")
@@ -381,6 +418,8 @@ struct ContentView: View {
             sessionManager.startSession()
             selectedAudioDeviceIDs = Set(deviceManager.audioDevices.prefix(1).map(\.uniqueID))
             audioManager.start(withDeviceIDs: Array(selectedAudioDeviceIDs))
+            loadRecentRecordings()
+            timestampText = timestampString()
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
             if let selected = selectedVideoDeviceID,
@@ -406,6 +445,9 @@ struct ContentView: View {
         }
         .onChange(of: sessionManager.selectedFormatID) { _, _ in
             sessionManager.applySelectedFormat()
+        }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            timestampText = timestampString()
         }
     }
 
