@@ -20,6 +20,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
+    var recordingManager: RecordingManager?
 
     func configureSession(with device: AVCaptureDevice?) {
         session.beginConfiguration()
@@ -94,6 +95,8 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
                 self?.videoSignalInfo = Self.describe(format: format, connection: connection)
             }
         }
+
+        recordingManager?.appendVideoSample(sampleBuffer)
     }
 
     private static func describe(format: CMFormatDescription, connection: AVCaptureConnection) -> String {
