@@ -35,7 +35,8 @@ final class RecordingManager: ObservableObject {
 
     func startNewRecording() {
         let fileName = "recording"
-        let url = FileManager.default.temporaryDirectory
+        let directory = defaultDirectoryURL() ?? FileManager.default.temporaryDirectory
+        let url = directory
             .appendingPathComponent(fileName)
             .appendingPathExtension(outputExtension(for: preferredFileType))
         startRecording(to: url, fileType: preferredFileType)
@@ -179,5 +180,23 @@ final class RecordingManager: ObservableObject {
         case .mov: return "mov"
         default: return "mp4"
         }
+    }
+
+    private func defaultDirectoryURL() -> URL? {
+        let fileManager = FileManager.default
+        let base = fileManager.urls(for: .moviesDirectory, in: .userDomainMask).first
+            ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+        guard let base else { return nil }
+        let directory = base.appendingPathComponent("MacDisplayLink", isDirectory: true)
+
+        if !fileManager.fileExists(atPath: directory.path) {
+            do {
+                try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            } catch {
+                DispatchQueue.main.async { self.state = .failed("Failed to create output directory.") }
+                return nil
+            }
+        }
+        return directory
     }
 }
