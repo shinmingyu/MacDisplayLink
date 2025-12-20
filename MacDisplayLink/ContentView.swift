@@ -181,6 +181,20 @@ struct ContentView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                HStack {
+                    Text("Bitrate")
+                    Slider(
+                        value: Binding(
+                            get: { Double(recordingManager.preferredVideoBitrate) / 1_000_000 },
+                            set: { recordingManager.setPreferredVideoBitrate(Int($0 * 1_000_000)) }
+                        ),
+                        in: 1...50,
+                        step: 1
+                    )
+                    Text("\(recordingManager.preferredVideoBitrate / 1_000_000) Mbps")
+                        .frame(width: 90, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                }
 
                 if let output = recordingManager.outputURL {
                     Text("Output: \(output.lastPathComponent)")

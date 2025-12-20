@@ -23,6 +23,7 @@ final class RecordingManager: ObservableObject {
     @Published private(set) var recordedFileSize: Int64 = 0
     @Published private(set) var preferredFileType: AVFileType = .mp4
     @Published private(set) var preferredVideoCodec: AVVideoCodecType = .h264
+    @Published private(set) var preferredVideoBitrate: Int = 8_000_000
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
     private var writer: AVAssetWriter?
@@ -164,7 +165,10 @@ final class RecordingManager: ObservableObject {
         let settings: [String: Any] = [
             AVVideoCodecKey: preferredVideoCodec,
             AVVideoWidthKey: Int(dimensions.width),
-            AVVideoHeightKey: Int(dimensions.height)
+            AVVideoHeightKey: Int(dimensions.height),
+            AVVideoCompressionPropertiesKey: [
+                AVVideoAverageBitRateKey: preferredVideoBitrate
+            ]
         ]
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
         input.expectsMediaDataInRealTime = true
@@ -226,6 +230,12 @@ final class RecordingManager: ObservableObject {
 
     func setPreferredVideoCodec(_ codec: AVVideoCodecType) {
         preferredVideoCodec = codec
+    }
+
+    func setPreferredVideoBitrate(_ bitrate: Int) {
+        // Clamp to a reasonable range (1 Mbps ... 100 Mbps) to avoid invalid settings.
+        let clamped = max(1_000_000, min(bitrate, 100_000_000))
+        preferredVideoBitrate = clamped
     }
 
     private func updateStatus(with timestamp: CMTime) {
