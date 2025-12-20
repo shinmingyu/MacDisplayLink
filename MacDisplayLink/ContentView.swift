@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var isLowDiskSpace: Bool = false
     @State private var recentRecordings: [RecordingManager.RecordingFileEntry] = []
     @State private var selectedVideoDeviceID: String?
+    @State private var selectedAudioDeviceIDs: Set<String> = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -124,6 +125,27 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Audio Capture")
                     .font(.headline)
+
+                if deviceManager.audioDevices.isEmpty {
+                    Text("No audio devices found.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Select audio devices to mix:")
+                            .font(.subheadline)
+                        ForEach(deviceManager.audioDevices, id: \.uniqueID) { device in
+                            Toggle(isOn: Binding(
+                                get: { selectedAudioDeviceIDs.contains(device.uniqueID) },
+                                set: { isOn in
+                                    if isOn { selectedAudioDeviceIDs.insert(device.uniqueID) }
+                                    else { selectedAudioDeviceIDs.remove(device.uniqueID) }
+                                }
+                            )) {
+                                Text(device.localizedName)
+                            }
+                        }
+                    }
+                }
 
                 if audioManager.isRunning {
                     Text("Audio input active")
@@ -332,7 +354,8 @@ struct ContentView: View {
             selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
             sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
-            audioManager.start()
+            selectedAudioDeviceIDs = Set(deviceManager.audioDevices.prefix(1).map(\.uniqueID))
+            audioManager.start(withDeviceIDs: Array(selectedAudioDeviceIDs))
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
             if let selected = selectedVideoDeviceID,
@@ -343,6 +366,18 @@ struct ContentView: View {
             }
             sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
+        }
+        .onChange(of: deviceManager.audioDevices.map(\.uniqueID)) { _, _ in
+            selectedAudioDeviceIDs = selectedAudioDeviceIDs.filter { id in
+                deviceManager.audioDevices.contains(where: { $0.uniqueID == id })
+            }
+            if selectedAudioDeviceIDs.isEmpty {
+                selectedAudioDeviceIDs = Set(deviceManager.audioDevices.prefix(1).map(\.uniqueID))
+            }
+            audioManager.start(withDeviceIDs: Array(selectedAudioDeviceIDs))
+        }
+        .onChange(of: selectedAudioDeviceIDs) { _, newValue in
+            audioManager.start(withDeviceIDs: Array(newValue))
         }
         .onChange(of: sessionManager.selectedFormatID) { _, _ in
             sessionManager.applySelectedFormat()

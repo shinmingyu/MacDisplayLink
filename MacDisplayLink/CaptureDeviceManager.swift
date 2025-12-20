@@ -11,10 +11,12 @@ import Foundation
 
 final class CaptureDeviceManager: ObservableObject {
     @Published private(set) var videoDevices: [AVCaptureDevice] = []
+    @Published private(set) var audioDevices: [AVCaptureDevice] = []
     private var cancellables = Set<AnyCancellable>()
 
     init() {
         refreshVideoDevices()
+        refreshAudioDevices()
         startObservingDeviceChanges()
     }
 
@@ -60,7 +62,12 @@ final class CaptureDeviceManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshVideoDevices()
+                self?.refreshAudioDevices()
             }
             .store(in: &cancellables)
+    }
+
+    private func refreshAudioDevices() {
+        audioDevices = AVCaptureDevice.devices(for: .audio)
     }
 }

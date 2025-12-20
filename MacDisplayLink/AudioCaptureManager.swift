@@ -29,7 +29,7 @@ final class AudioCaptureManager: NSObject, ObservableObject {
     private var didRequestMediaData = false
     var recordingManager: RecordingManager?
 
-    func start(with device: AVCaptureDevice? = AVCaptureDevice.default(for: .audio)) {
+    func start(withDeviceIDs deviceIDs: [String]? = nil) {
         session.stopRunning()
         session.beginConfiguration()
         defer { session.commitConfiguration() }
@@ -37,24 +37,24 @@ final class AudioCaptureManager: NSObject, ObservableObject {
         session.inputs.forEach { session.removeInput($0) }
         session.outputs.forEach { session.removeOutput($0) }
 
-        guard let device else {
+        let devices = resolveAudioDevices(for: deviceIDs)
+        guard !devices.isEmpty else {
             isRunning = false
             lastError = "No audio capture device available."
             return
         }
 
-        do {
-            let input = try AVCaptureDeviceInput(device: device)
-            guard session.canAddInput(input) else {
-                isRunning = false
-                lastError = "Unable to add audio device input."
-                return
+        for device in devices {
+            do {
+                let input = try AVCaptureDeviceInput(device: device)
+                guard session.canAddInput(input) else {
+                    continue
+                }
+                session.addInput(input)
+            } catch {
+                lastError = error.localizedDescription
+                continue
             }
-            session.addInput(input)
-        } catch {
-            isRunning = false
-            lastError = error.localizedDescription
-            return
         }
 
         audioOutput.setSampleBufferDelegate(self, queue: audioQueue)
@@ -100,6 +100,17 @@ final class AudioCaptureManager: NSObject, ObservableObject {
         rendererQueue.async { [weak self] in
             self?.audioRenderer.volume = finalVolume
         }
+    }
+
+    private func resolveAudioDevices(for deviceIDs: [String]?) -> [AVCaptureDevice] {
+        let allDevices = AVCaptureDevice.devices(for: .audio)
+        if let ids = deviceIDs, !ids.isEmpty {
+            return allDevices.filter { ids.contains($0.uniqueID) }
+        }
+        if let defaultDevice = AVCaptureDevice.default(for: .audio) {
+            return [defaultDevice]
+        }
+        return []
     }
 }
 
