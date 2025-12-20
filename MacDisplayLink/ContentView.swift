@@ -159,6 +159,7 @@ struct ContentView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .keyboardShortcut("r", modifiers: [.command])
 
                     switch recordingManager.state {
                     case .idle:
