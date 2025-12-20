@@ -22,6 +22,9 @@ struct ContentView: View {
     @State private var recentRecordings: [RecordingManager.RecordingFileEntry] = []
     @State private var selectedVideoDeviceID: String?
     @State private var selectedAudioDeviceIDs: Set<String> = []
+    @State private var rotationDegrees: Double = 0
+    @State private var flipHorizontal: Bool = false
+    @State private var flipVertical: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -65,8 +68,8 @@ struct ContentView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Video Preview")
-                    .font(.headline)
+                    Text("Video Preview")
+                        .font(.headline)
 
                 if sessionManager.isConfigured {
                     if sessionManager.availableFormats.isEmpty {
@@ -90,8 +93,30 @@ struct ContentView: View {
                         }
                     }
 
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Transform")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("Rotation")
+                            Slider(value: $rotationDegrees, in: 0...270, step: 90)
+                            Text("\(Int(rotationDegrees))°")
+                                .frame(width: 40, alignment: .trailing)
+                                .foregroundStyle(.secondary)
+                        }
+                        HStack {
+                            Toggle("Flip H", isOn: $flipHorizontal)
+                            Toggle("Flip V", isOn: $flipVertical)
+                        }
+                    }
+
                     ZStack {
-                        VideoPreviewView(session: sessionManager.session)
+                        VideoPreviewView(
+                            session: sessionManager.session,
+                            rotationDegrees: rotationDegrees,
+                            flipHorizontal: flipHorizontal,
+                            flipVertical: flipVertical
+                        )
                             .frame(minHeight: 240)
                             .background(.black.opacity(0.1))
                             .cornerRadius(8)
