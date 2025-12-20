@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var diskSpaceMessage: String?
     @State private var isLowDiskSpace: Bool = false
     @State private var recentRecordings: [RecordingManager.RecordingFileEntry] = []
+    @State private var selectedVideoDeviceID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -30,12 +31,32 @@ struct ContentView: View {
                 Text("No video capture devices found.")
                     .foregroundStyle(.secondary)
             } else {
-                List(deviceManager.videoDevices, id: \.uniqueID) { device in
-                    VStack(alignment: .leading) {
-                        Text(device.localizedName)
-                        Text(device.uniqueID)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("Video Device", selection: Binding(
+                        get: { selectedVideoDeviceID ?? deviceManager.videoDevices.first?.uniqueID ?? "" },
+                        set: { selectedVideoDeviceID = $0 }
+                    )) {
+                        ForEach(deviceManager.videoDevices, id: \.uniqueID) { device in
+                            Text(device.localizedName).tag(device.uniqueID)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    List(deviceManager.videoDevices, id: \.uniqueID) { device in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(device.localizedName)
+                                Text(device.uniqueID)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if selectedVideoDeviceID == device.uniqueID {
+                                Text("Selected")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            }
+                        }
                     }
                 }
             }
@@ -308,12 +329,19 @@ struct ContentView: View {
         .onAppear {
             sessionManager.recordingManager = recordingManager
             audioManager.recordingManager = recordingManager
-            sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
+            sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
             audioManager.start()
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
-            sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            if let selected = selectedVideoDeviceID,
+               deviceManager.videoDevices.contains(where: { $0.uniqueID == selected }) == false {
+                selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
+            } else if selectedVideoDeviceID == nil {
+                selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
+            }
+            sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
         }
         .onChange(of: sessionManager.selectedFormatID) { _, _ in
@@ -352,6 +380,11 @@ struct ContentView: View {
         } else {
             return "\(dims.width)x\(dims.height)"
         }
+    }
+
+    private func selectedVideoDevice() -> AVCaptureDevice? {
+        guard let id = selectedVideoDeviceID else { return deviceManager.videoDevices.first }
+        return deviceManager.videoDevices.first(where: { $0.uniqueID == id }) ?? deviceManager.videoDevices.first
     }
 
     private func formatDb(from linear: Float) -> String {
