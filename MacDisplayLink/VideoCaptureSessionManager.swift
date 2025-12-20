@@ -20,6 +20,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
     @Published private(set) var videoSignalInfo: String?
     @Published private(set) var availableFormats: [VideoFormatOption] = []
     @Published var selectedFormatID: String?
+    @Published private(set) var previewQuality: PreviewQuality = .high
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
@@ -27,6 +28,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
     private var latestPixelBuffer: CVPixelBuffer?
     var recordingManager: RecordingManager?
     private var currentDevice: AVCaptureDevice?
+    private var isConfiguredOnce = false
 
     func configureSession(with device: AVCaptureDevice?) {
         session.beginConfiguration()
@@ -46,7 +48,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
             return
         }
 
-        session.sessionPreset = .high
+        session.sessionPreset = previewQuality.toPreset()
         availableFormats = Self.buildFormats(for: device)
         selectedFormatID = availableFormats.first?.id
         currentDevice = device
@@ -81,6 +83,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
         configurationError = nil
         hasVideoSignal = false
         videoSignalInfo = nil
+        isConfiguredOnce = true
     }
 
     func startSession() {
@@ -194,6 +197,17 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
         if wasRunning { session.startRunning() }
     }
 
+    func setPreviewQuality(_ quality: PreviewQuality) {
+        previewQuality = quality
+        guard isConfiguredOnce else { return }
+        let wasRunning = session.isRunning
+        session.beginConfiguration()
+        if wasRunning { session.stopRunning() }
+        session.sessionPreset = quality.toPreset()
+        session.commitConfiguration()
+        if wasRunning { session.startRunning() }
+    }
+
     /// Captures the latest video frame as an NSImage. Returns nil if no frame is available yet.
     func captureScreenshotImage() -> NSImage? {
         var pixelBuffer: CVPixelBuffer?
@@ -206,6 +220,20 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
         let context = CIContext()
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
         return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+    }
+}
+
+enum PreviewQuality: String, CaseIterable, Identifiable {
+    case low, medium, high
+
+    var id: String { rawValue }
+
+    func toPreset() -> AVCaptureSession.Preset {
+        switch self {
+        case .low: return .low
+        case .medium: return .medium
+        case .high: return .high
+        }
     }
 }
 

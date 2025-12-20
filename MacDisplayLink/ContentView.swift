@@ -95,8 +95,18 @@ struct ContentView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+
+                            Picker("Preview quality", selection: Binding(
+                                get: { sessionManager.previewQuality },
+                                set: { sessionManager.setPreviewQuality($0) }
+                            )) {
+                                Text("Low").tag(PreviewQuality.low)
+                                Text("Medium").tag(PreviewQuality.medium)
+                                Text("High").tag(PreviewQuality.high)
+                            }
+                            .pickerStyle(.segmented)
                         }
-                }
+                    }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Transform")
