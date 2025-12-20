@@ -105,14 +105,18 @@ struct ContentView: View {
                         Text("Volume")
                         Slider(
                             value: Binding(
-                                get: { audioManager.volume },
-                                set: { audioManager.setVolume($0) }
+                                get: { audioManager.displayVolume },
+                                set: { audioManager.setVolumeFromUI($0) }
                             ),
                             in: 0...1
                         )
-                        Text(String(format: "%.0f%%", audioManager.volume * 100))
-                            .frame(width: 60, alignment: .trailing)
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(String(format: "%.0f%%", audioManager.displayVolume * 100))
+                            Text(formatDb(from: audioManager.volume))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(width: 80, alignment: .trailing)
+                        .foregroundStyle(.secondary)
                     }
                     HStack {
                         Text("Level")
@@ -264,6 +268,12 @@ struct ContentView: View {
         } else {
             return "\(dims.width)x\(dims.height)"
         }
+    }
+
+    private func formatDb(from linear: Float) -> String {
+        guard linear > 0 else { return "-inf dB" }
+        let db = 20 * log10(Double(linear))
+        return String(format: "%.1f dB", db)
     }
 }
 

@@ -18,6 +18,7 @@ final class AudioCaptureManager: NSObject, ObservableObject {
     @Published private(set) var lastAudioFormat: CMFormatDescription?
     @Published private(set) var isMonitoring = false
     @Published private(set) var volume: Float = 1.0
+    @Published private(set) var displayVolume: Float = 1.0
     @Published private(set) var meterLevel: Float = 0.0
 
     private let audioOutput = AVCaptureAudioDataOutput()
@@ -88,11 +89,15 @@ final class AudioCaptureManager: NSObject, ObservableObject {
         isMonitoring = false
     }
 
-    func setVolume(_ newValue: Float) {
-        let clamped = max(0, min(1, newValue))
-        volume = clamped
+    /// Accepts a UI value (0...1) and maps it to a non-linear curve for finer low-volume control.
+    func setVolumeFromUI(_ newValue: Float) {
+        let clampedDisplay = max(0, min(1, newValue))
+        displayVolume = clampedDisplay
+        let curvedVolume = pow(clampedDisplay, 2.5) // more resolution near 0
+        let finalVolume = max(0, min(1, curvedVolume))
+        volume = finalVolume
         rendererQueue.async { [weak self] in
-            self?.audioRenderer.volume = clamped
+            self?.audioRenderer.volume = finalVolume
         }
     }
 }
