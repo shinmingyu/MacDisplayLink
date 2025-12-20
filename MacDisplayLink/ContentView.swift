@@ -9,12 +9,18 @@
 import AVFoundation
 import SwiftUI
 import AppKit
+import AppKit
 
 struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
     @StateObject private var sessionManager = VideoCaptureSessionManager()
     @StateObject private var audioManager = AudioCaptureManager()
     @StateObject private var recordingManager = RecordingManager()
+    @State private var screenshotMessage: String?
+    @State private var diskSpaceMessage: String?
+    @State private var isLowDiskSpace: Bool = false
+    @State private var recentRecordings: [RecordingManager.RecordingFileEntry] = []
+    @State private var selectedVideoDeviceID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -25,12 +31,32 @@ struct ContentView: View {
                 Text("No video capture devices found.")
                     .foregroundStyle(.secondary)
             } else {
-                List(deviceManager.videoDevices, id: \.uniqueID) { device in
-                    VStack(alignment: .leading) {
-                        Text(device.localizedName)
-                        Text(device.uniqueID)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Picker("Video Device", selection: Binding(
+                        get: { selectedVideoDeviceID ?? deviceManager.videoDevices.first?.uniqueID ?? "" },
+                        set: { selectedVideoDeviceID = $0 }
+                    )) {
+                        ForEach(deviceManager.videoDevices, id: \.uniqueID) { device in
+                            Text(device.localizedName).tag(device.uniqueID)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    List(deviceManager.videoDevices, id: \.uniqueID) { device in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(device.localizedName)
+                                Text(device.uniqueID)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if selectedVideoDeviceID == device.uniqueID {
+                                Text("Selected")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            }
+                        }
                     }
                 }
             }
@@ -173,6 +199,19 @@ struct ContentView: View {
                     }
                 }
 
+                HStack {
+                    Button("Capture Screenshot") {
+                        captureScreenshot()
+                    }
+                    if let message = screenshotMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Save path")
                     HStack {
@@ -184,6 +223,47 @@ struct ContentView: View {
                         Spacer()
                         Button("Choose folder") {
                             chooseOutputDirectory()
+                        }
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Storage")
+                        Button("Check") {
+                            checkDiskSpace()
+                        }
+                    }
+                    if let message = diskSpaceMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(isLowDiskSpace ? .red : .secondary)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Recent recordings")
+                        Button("Refresh") {
+                            loadRecentRecordings()
+                        }
+                    }
+                    if recentRecordings.isEmpty {
+                        Text("No recordings yet.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(recentRecordings) { entry in
+                            HStack {
+                                Text(entry.url.lastPathComponent)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(formatBytes(entry.size))
+                                    Text(formatDate(entry.createdAt))
+                                }
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -249,12 +329,19 @@ struct ContentView: View {
         .onAppear {
             sessionManager.recordingManager = recordingManager
             audioManager.recordingManager = recordingManager
-            sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
+            sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
             audioManager.start()
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
-            sessionManager.configureSession(with: deviceManager.videoDevices.first)
+            if let selected = selectedVideoDeviceID,
+               deviceManager.videoDevices.contains(where: { $0.uniqueID == selected }) == false {
+                selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
+            } else if selectedVideoDeviceID == nil {
+                selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
+            }
+            sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
         }
         .onChange(of: sessionManager.selectedFormatID) { _, _ in
@@ -295,10 +382,85 @@ struct ContentView: View {
         }
     }
 
+    private func selectedVideoDevice() -> AVCaptureDevice? {
+        guard let id = selectedVideoDeviceID else { return deviceManager.videoDevices.first }
+        return deviceManager.videoDevices.first(where: { $0.uniqueID == id }) ?? deviceManager.videoDevices.first
+    }
+
     private func formatDb(from linear: Float) -> String {
         guard linear > 0 else { return "-inf dB" }
         let db = 20 * log10(Double(linear))
         return String(format: "%.1f dB", db)
+    }
+
+    private func captureScreenshot() {
+        guard let image = sessionManager.captureScreenshotImage() else {
+            screenshotMessage = "No video frame available."
+            return
+        }
+        guard let directory = recordingManager.resolvedOutputDirectory() else {
+            screenshotMessage = "Unable to resolve output directory."
+            return
+        }
+
+        let fileName = "screenshot-\(timestampString()).png"
+        let url = directory.appendingPathComponent(fileName)
+
+        guard let tiff = image.tiffRepresentation,
+              let rep = NSBitmapImageRep(data: tiff),
+              let pngData = rep.representation(using: .png, properties: [:]) else {
+            screenshotMessage = "Failed to encode screenshot."
+            return
+        }
+
+        do {
+            try pngData.write(to: url)
+            screenshotMessage = "Saved \(url.lastPathComponent)"
+        } catch {
+            screenshotMessage = "Save failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func timestampString() -> String {
+        let formatter: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "yyyyMMdd-HHmmss"
+            f.locale = Locale(identifier: "en_US_POSIX")
+            return f
+        }()
+        return formatter.string(from: Date())
+    }
+
+    private func checkDiskSpace() {
+        guard let directory = recordingManager.resolvedOutputDirectory() else {
+            diskSpaceMessage = "Unable to resolve output directory."
+            isLowDiskSpace = false
+            return
+        }
+
+        do {
+            let attributes = try FileManager.default.attributesOfFileSystem(forPath: directory.path)
+            let freeBytes = (attributes[.systemFreeSize] as? NSNumber)?.int64Value ?? 0
+            let totalBytes = (attributes[.systemSize] as? NSNumber)?.int64Value ?? 0
+            isLowDiskSpace = freeBytes < 1_000_000_000 // warn if less than ~1GB
+            diskSpaceMessage = "Free \(formatBytes(freeBytes)) / \(formatBytes(totalBytes))"
+        } catch {
+            diskSpaceMessage = "Disk check failed: \(error.localizedDescription)"
+            isLowDiskSpace = false
+        }
+    }
+
+    private func loadRecentRecordings() {
+        recentRecordings = recordingManager.recentRecordings(limit: 10)
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "MM/dd HH:mm"
+            return f
+        }()
+        return formatter.string(from: date)
     }
 
     private func chooseOutputDirectory() {

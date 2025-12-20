@@ -8,6 +8,7 @@
 import AVFoundation
 import Combine
 import Foundation
+import AppKit
 
 final class VideoCaptureSessionManager: NSObject, ObservableObject {
     let session = AVCaptureSession()
@@ -22,6 +23,8 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
 
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
+    private let pixelBufferLock = DispatchQueue(label: "VideoCaptureSessionManager.pixelBuffer")
+    private var latestPixelBuffer: CVPixelBuffer?
     var recordingManager: RecordingManager?
     private var currentDevice: AVCaptureDevice?
 
@@ -105,6 +108,12 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
             }
         }
 
+        if let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            pixelBufferLock.async { [weak self] in
+                self?.latestPixelBuffer = buffer
+            }
+        }
+
         recordingManager?.appendVideoSample(sampleBuffer)
     }
 
@@ -183,6 +192,20 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
 
         session.commitConfiguration()
         if wasRunning { session.startRunning() }
+    }
+
+    /// Captures the latest video frame as an NSImage. Returns nil if no frame is available yet.
+    func captureScreenshotImage() -> NSImage? {
+        var pixelBuffer: CVPixelBuffer?
+        pixelBufferLock.sync {
+            pixelBuffer = latestPixelBuffer
+        }
+        guard let buffer = pixelBuffer else { return nil }
+
+        let ciImage = CIImage(cvPixelBuffer: buffer)
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+        return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
     }
 }
 
