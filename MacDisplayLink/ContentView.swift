@@ -13,6 +13,7 @@ struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
     @StateObject private var sessionManager = VideoCaptureSessionManager()
     @StateObject private var audioManager = AudioCaptureManager()
+    @StateObject private var recordingManager = RecordingManager()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -111,6 +112,8 @@ struct ContentView: View {
         }
         .padding()
         .onAppear {
+            sessionManager.recordingManager = recordingManager
+            audioManager.recordingManager = recordingManager
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
             sessionManager.startSession()
             audioManager.start()

@@ -25,6 +25,7 @@ final class AudioCaptureManager: NSObject, ObservableObject {
     private let rendererQueue = DispatchQueue(label: "AudioCaptureManager.renderer")
     private let audioRenderer = AVSampleBufferAudioRenderer()
     private var didRequestMediaData = false
+    var recordingManager: RecordingManager?
 
     func start(with device: AVCaptureDevice? = AVCaptureDevice.default(for: .audio)) {
         session.stopRunning()
@@ -115,6 +116,7 @@ extension AudioCaptureManager: AVCaptureAudioDataOutputSampleBufferDelegate {
         }
 
         updateMeter(sampleBuffer: sampleBuffer)
+        recordingManager?.appendAudioSample(sampleBuffer)
     }
 
     private func updateMeter(sampleBuffer: CMSampleBuffer) {
