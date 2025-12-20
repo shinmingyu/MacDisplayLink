@@ -19,6 +19,8 @@ final class RecordingManager: ObservableObject {
 
     @Published private(set) var state: State = .idle
     @Published private(set) var outputURL: URL?
+    @Published private(set) var recordedDuration: TimeInterval = 0
+    @Published private(set) var recordedFileSize: Int64 = 0
     var preferredFileType: AVFileType = .mp4
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
@@ -26,6 +28,7 @@ final class RecordingManager: ObservableObject {
     private var videoInput: AVAssetWriterInput?
     private var audioInput: AVAssetWriterInput?
     private var startTime: CMTime?
+    private var lastTimestamp: CMTime?
 
     var isRecording: Bool {
         if case .recording = state { return true }
@@ -56,6 +59,9 @@ final class RecordingManager: ObservableObject {
                 self.videoInput = nil
                 self.audioInput = nil
                 self.startTime = nil
+                self.lastTimestamp = nil
+                self.recordedDuration = 0
+                self.recordedFileSize = 0
                 DispatchQueue.main.async { self.state = .recording }
             } catch {
                 DispatchQueue.main.async { self.state = .failed(error.localizedDescription) }
@@ -85,6 +91,7 @@ final class RecordingManager: ObservableObject {
                 self.videoInput = nil
                 self.audioInput = nil
                 self.startTime = nil
+                self.lastTimestamp = nil
                 DispatchQueue.main.async {
                     self.state = resultState
                 }
@@ -112,6 +119,7 @@ final class RecordingManager: ObservableObject {
             self.startSessionIfNeeded(with: timestamp)
             if writer.status == .writing {
                 videoInput.append(sampleBuffer)
+                self.updateStatus(with: timestamp)
             }
         }
     }
@@ -136,6 +144,7 @@ final class RecordingManager: ObservableObject {
             self.startSessionIfNeeded(with: timestamp)
             if writer.status == .writing {
                 audioInput.append(sampleBuffer)
+                self.updateStatus(with: timestamp)
             }
         }
     }
@@ -208,5 +217,29 @@ final class RecordingManager: ObservableObject {
             return f
         }()
         return "recording-\(formatter.string(from: Date()))"
+    }
+
+    private func updateStatus(with timestamp: CMTime) {
+        guard let startTime else { return }
+        lastTimestamp = timestamp
+
+        let duration = CMTimeSubtract(timestamp, startTime)
+        let seconds = CMTimeGetSeconds(duration)
+        let fileSize = currentFileSize()
+
+        DispatchQueue.main.async {
+            if seconds.isFinite {
+                self.recordedDuration = max(0, seconds)
+            }
+            if let fileSize {
+                self.recordedFileSize = fileSize
+            }
+        }
+    }
+
+    private func currentFileSize() -> Int64? {
+        guard let url = outputURL else { return nil }
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        return attributes?[.size] as? Int64
     }
 }

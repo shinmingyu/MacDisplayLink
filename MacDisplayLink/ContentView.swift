@@ -143,6 +143,19 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                HStack {
+                    Text("Duration")
+                    Spacer()
+                    Text(formatDuration(recordingManager.recordedDuration))
+                        .foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("File size")
+                    Spacer()
+                    Text(formatBytes(recordingManager.recordedFileSize))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()
@@ -157,6 +170,29 @@ struct ContentView: View {
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
             sessionManager.startSession()
         }
+    }
+
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        guard seconds.isFinite else { return "--:--" }
+        let totalSeconds = Int(seconds.rounded())
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let secs = totalSeconds % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, secs)
+        } else {
+            return String(format: "%02d:%02d", minutes, secs)
+        }
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        guard bytes > 0 else { return "0 B" }
+        let kb = Double(bytes) / 1024.0
+        if kb < 1024 {
+            return String(format: "%.1f KB", kb)
+        }
+        let mb = kb / 1024.0
+        return String(format: "%.1f MB", mb)
     }
 }
 
