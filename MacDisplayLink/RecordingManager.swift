@@ -34,7 +34,7 @@ final class RecordingManager: ObservableObject {
     }
 
     func startNewRecording() {
-        let fileName = "recording"
+        let fileName = makeTimestampedFileName()
         let directory = defaultDirectoryURL() ?? FileManager.default.temporaryDirectory
         let url = directory
             .appendingPathComponent(fileName)
@@ -198,5 +198,15 @@ final class RecordingManager: ObservableObject {
             }
         }
         return directory
+    }
+
+    private func makeTimestampedFileName() -> String {
+        let formatter: DateFormatter = {
+            let f = DateFormatter()
+            f.dateFormat = "yyyyMMdd-HHmmss"
+            f.locale = Locale(identifier: "en_US_POSIX")
+            return f
+        }()
+        return "recording-\(formatter.string(from: Date()))"
     }
 }
