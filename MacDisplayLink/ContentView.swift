@@ -17,6 +17,8 @@ struct ContentView: View {
     @StateObject private var audioManager = AudioCaptureManager()
     @StateObject private var recordingManager = RecordingManager()
     @State private var screenshotMessage: String?
+    @State private var diskSpaceMessage: String?
+    @State private var isLowDiskSpace: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -202,6 +204,19 @@ struct ContentView: View {
                         }
                     }
                 }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Storage")
+                        Button("Check") {
+                            checkDiskSpace()
+                        }
+                    }
+                    if let message = diskSpaceMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(isLowDiskSpace ? .red : .secondary)
+                    }
+                }
 
                 HStack {
                     Text("Format")
@@ -352,6 +367,25 @@ struct ContentView: View {
             return f
         }()
         return formatter.string(from: Date())
+    }
+
+    private func checkDiskSpace() {
+        guard let directory = recordingManager.resolvedOutputDirectory() else {
+            diskSpaceMessage = "Unable to resolve output directory."
+            isLowDiskSpace = false
+            return
+        }
+
+        do {
+            let attributes = try FileManager.default.attributesOfFileSystem(forPath: directory.path)
+            let freeBytes = (attributes[.systemFreeSize] as? NSNumber)?.int64Value ?? 0
+            let totalBytes = (attributes[.systemSize] as? NSNumber)?.int64Value ?? 0
+            isLowDiskSpace = freeBytes < 1_000_000_000 // warn if less than ~1GB
+            diskSpaceMessage = "Free \(formatBytes(freeBytes)) / \(formatBytes(totalBytes))"
+        } catch {
+            diskSpaceMessage = "Disk check failed: \(error.localizedDescription)"
+            isLowDiskSpace = false
+        }
     }
 
     private func chooseOutputDirectory() {
