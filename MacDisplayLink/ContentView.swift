@@ -41,6 +41,22 @@ struct ContentView: View {
                     .font(.headline)
 
                 if sessionManager.isConfigured {
+                    if sessionManager.availableFormats.isEmpty {
+                        Text("No format info available")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Supported formats")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            ForEach(sessionManager.availableFormats) { option in
+                                Text(formatVideoOption(option))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     ZStack {
                         VideoPreviewView(session: sessionManager.session)
                             .frame(minHeight: 240)
@@ -193,6 +209,16 @@ struct ContentView: View {
         }
         let mb = kb / 1024.0
         return String(format: "%.1f MB", mb)
+    }
+
+    private func formatVideoOption(_ option: VideoFormatOption) -> String {
+        let dims = option.dimensions
+        let fps = option.maxFrameRate
+        if fps > 0 {
+            return "\(dims.width)x\(dims.height) @ \(String(format: "%.0f", fps)) fps"
+        } else {
+            return "\(dims.width)x\(dims.height)"
+        }
     }
 }
 
