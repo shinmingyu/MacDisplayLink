@@ -23,6 +23,7 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
     private let videoOutput = AVCaptureVideoDataOutput()
     private let videoQueue = DispatchQueue(label: "VideoCaptureSessionManager.queue")
     var recordingManager: RecordingManager?
+    private var currentDevice: AVCaptureDevice?
 
     func configureSession(with device: AVCaptureDevice?) {
         session.beginConfiguration()
@@ -38,12 +39,14 @@ final class VideoCaptureSessionManager: NSObject, ObservableObject {
             videoSignalInfo = nil
             availableFormats = []
             selectedFormatID = nil
+            currentDevice = nil
             return
         }
 
         session.sessionPreset = .high
         availableFormats = Self.buildFormats(for: device)
         selectedFormatID = availableFormats.first?.id
+        currentDevice = device
 
         do {
             let input = try AVCaptureDeviceInput(device: device)
@@ -151,6 +154,35 @@ extension VideoCaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelega
         let c4 = Character(UnicodeScalar(fourCC & 0xFF)!)
         let code = "\(c1)\(c2)\(c3)\(c4)"
         return "\(dimensions.width)x\(dimensions.height)-\(code)-\(Int(maxFPS))"
+    }
+
+    func applySelectedFormat() {
+        guard let device = currentDevice,
+              let selectedFormatID,
+              let option = availableFormats.first(where: { $0.id == selectedFormatID })
+        else { return }
+
+        let wasRunning = session.isRunning
+        session.beginConfiguration()
+        if wasRunning { session.stopRunning() }
+
+        do {
+            try device.lockForConfiguration()
+            device.activeFormat = option.format
+            if option.maxFrameRate > 0 {
+                let fps = max(1, Int32(option.maxFrameRate.rounded()))
+                let duration = CMTime(value: 1, timescale: fps)
+                device.activeVideoMinFrameDuration = duration
+                device.activeVideoMaxFrameDuration = duration
+            }
+            device.unlockForConfiguration()
+            configurationError = nil
+        } catch {
+            configurationError = "Failed to set format: \(error.localizedDescription)"
+        }
+
+        session.commitConfiguration()
+        if wasRunning { session.startRunning() }
     }
 }
 

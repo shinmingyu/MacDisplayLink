@@ -191,6 +191,9 @@ struct ContentView: View {
             sessionManager.configureSession(with: deviceManager.videoDevices.first)
             sessionManager.startSession()
         }
+        .onChange(of: sessionManager.selectedFormatID) { _, _ in
+            sessionManager.applySelectedFormat()
+        }
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
