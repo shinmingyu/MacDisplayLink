@@ -21,7 +21,7 @@ final class RecordingManager: ObservableObject {
     @Published private(set) var outputURL: URL?
     @Published private(set) var recordedDuration: TimeInterval = 0
     @Published private(set) var recordedFileSize: Int64 = 0
-    var preferredFileType: AVFileType = .mp4
+    @Published private(set) var preferredFileType: AVFileType = .mp4
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
     private var writer: AVAssetWriter?
@@ -217,6 +217,10 @@ final class RecordingManager: ObservableObject {
             return f
         }()
         return "recording-\(formatter.string(from: Date()))"
+    }
+
+    func setPreferredFileType(_ type: AVFileType) {
+        preferredFileType = type
     }
 
     private func updateStatus(with timestamp: CMTime) {

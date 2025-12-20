@@ -159,6 +159,18 @@ struct ContentView: View {
                     }
                 }
 
+                HStack {
+                    Text("Format")
+                    Picker("Format", selection: Binding(
+                        get: { recordingManager.preferredFileType },
+                        set: { recordingManager.setPreferredFileType($0) }
+                    )) {
+                        Text("MP4").tag(AVFileType.mp4)
+                        Text("MOV").tag(AVFileType.mov)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 if let output = recordingManager.outputURL {
                     Text("Output: \(output.lastPathComponent)")
                         .font(.caption)
