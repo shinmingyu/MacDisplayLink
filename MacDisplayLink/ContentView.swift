@@ -6,8 +6,9 @@
 //
 //
 
-import SwiftUI
 import AVFoundation
+import SwiftUI
+import AppKit
 
 struct ContentView: View {
     @StateObject private var deviceManager = CaptureDeviceManager()
@@ -171,6 +172,21 @@ struct ContentView: View {
                     }
                 }
 
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Save path")
+                    HStack {
+                        Text(outputDirectoryLabel())
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button("Choose folder") {
+                            chooseOutputDirectory()
+                        }
+                    }
+                }
+
                 HStack {
                     Text("Format")
                     Picker("Format", selection: Binding(
@@ -282,6 +298,31 @@ struct ContentView: View {
         guard linear > 0 else { return "-inf dB" }
         let db = 20 * log10(Double(linear))
         return String(format: "%.1f dB", db)
+    }
+
+    private func chooseOutputDirectory() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.prompt = "Select"
+
+        if panel.runModal() == .OK {
+            recordingManager.setCustomOutputDirectory(panel.url)
+        }
+    }
+
+    private func outputDirectoryLabel() -> String {
+        if let custom = recordingManager.customOutputDirectory {
+            return custom.path
+        }
+        // Reflect default directory path for clarity.
+        let fm = FileManager.default
+        let base = fm.urls(for: .moviesDirectory, in: .userDomainMask).first
+            ?? fm.urls(for: .documentDirectory, in: .userDomainMask).first
+        let defaultPath = base?.appendingPathComponent("MacDisplayLink", isDirectory: true).path
+        return defaultPath ?? "Default directory not available"
     }
 }
 

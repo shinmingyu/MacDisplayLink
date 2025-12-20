@@ -24,6 +24,7 @@ final class RecordingManager: ObservableObject {
     @Published private(set) var preferredFileType: AVFileType = .mp4
     @Published private(set) var preferredVideoCodec: AVVideoCodecType = .h264
     @Published private(set) var preferredVideoBitrate: Int = 8_000_000
+    @Published private(set) var customOutputDirectory: URL?
 
     private let queue = DispatchQueue(label: "RecordingManager.queue")
     private var writer: AVAssetWriter?
@@ -40,7 +41,7 @@ final class RecordingManager: ObservableObject {
 
     func startNewRecording() {
         let fileName = makeTimestampedFileName()
-        let directory = defaultDirectoryURL() ?? FileManager.default.temporaryDirectory
+        let directory = customOutputDirectory ?? defaultDirectoryURL() ?? FileManager.default.temporaryDirectory
         let url = directory
             .appendingPathComponent(fileName)
             .appendingPathExtension(outputExtension(for: preferredFileType))
@@ -236,6 +237,10 @@ final class RecordingManager: ObservableObject {
         // Clamp to a reasonable range (1 Mbps ... 100 Mbps) to avoid invalid settings.
         let clamped = max(1_000_000, min(bitrate, 100_000_000))
         preferredVideoBitrate = clamped
+    }
+
+    func setCustomOutputDirectory(_ url: URL?) {
+        customOutputDirectory = url
     }
 
     private func updateStatus(with timestamp: CMTime) {
