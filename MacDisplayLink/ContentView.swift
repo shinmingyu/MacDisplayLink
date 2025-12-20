@@ -9,6 +9,7 @@
 import AVFoundation
 import SwiftUI
 import AppKit
+import Combine
 import AppKit
 
 struct ContentView: View {
@@ -21,6 +22,14 @@ struct ContentView: View {
     @State private var isLowDiskSpace: Bool = false
     @State private var recentRecordings: [RecordingManager.RecordingFileEntry] = []
     @State private var selectedVideoDeviceID: String?
+    @State private var selectedAudioDeviceIDs: Set<String> = []
+    @State private var rotationDegrees: Double = 0
+    @State private var flipHorizontal: Bool = false
+    @State private var flipVertical: Bool = false
+    @State private var showTimestampOverlay: Bool = true
+    @State private var showWatermarkOverlay: Bool = false
+    @State private var watermarkText: String = "MacDisplayLink"
+    @State private var timestampText: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -64,8 +73,8 @@ struct ContentView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Video Preview")
-                    .font(.headline)
+                    Text("Video Preview")
+                        .font(.headline)
 
                 if sessionManager.isConfigured {
                     if sessionManager.availableFormats.isEmpty {
@@ -86,14 +95,78 @@ struct ContentView: View {
                                 }
                             }
                             .pickerStyle(.menu)
+
+                            Picker("Preview quality", selection: Binding(
+                                get: { sessionManager.previewQuality },
+                                set: { sessionManager.setPreviewQuality($0) }
+                            )) {
+                                Text("Low").tag(PreviewQuality.low)
+                                Text("Medium").tag(PreviewQuality.medium)
+                                Text("High").tag(PreviewQuality.high)
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                    }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Transform")
+                        .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            Text("Rotation")
+                            Slider(value: $rotationDegrees, in: 0...270, step: 90)
+                            Text("\(Int(rotationDegrees))°")
+                                .frame(width: 40, alignment: .trailing)
+                                .foregroundStyle(.secondary)
+                        }
+                        HStack {
+                            Toggle("Flip H", isOn: $flipHorizontal)
+                            Toggle("Flip V", isOn: $flipVertical)
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Overlay")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Toggle("Show timestamp", isOn: $showTimestampOverlay)
+                        HStack {
+                            Toggle("Watermark", isOn: $showWatermarkOverlay)
+                            TextField("Watermark text", text: $watermarkText)
+                                .textFieldStyle(.roundedBorder)
                         }
                     }
 
                     ZStack {
-                        VideoPreviewView(session: sessionManager.session)
+                        VideoPreviewView(
+                            session: sessionManager.session,
+                            rotationDegrees: rotationDegrees,
+                            flipHorizontal: flipHorizontal,
+                            flipVertical: flipVertical
+                        )
                             .frame(minHeight: 240)
                             .background(.black.opacity(0.1))
                             .cornerRadius(8)
+                            .overlay(alignment: .topTrailing) {
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    if showTimestampOverlay {
+                                        Text(timestampText)
+                                            .font(.caption)
+                                            .padding(6)
+                                            .background(Color.black.opacity(0.6))
+                                            .foregroundColor(.white)
+                                            .cornerRadius(6)
+                                    }
+                                    if showWatermarkOverlay, !watermarkText.isEmpty {
+                                        Text(watermarkText)
+                                            .font(.caption2)
+                                            .padding(6)
+                                            .background(Color.black.opacity(0.6))
+                                            .foregroundColor(.white)
+                                            .cornerRadius(6)
+                                    }
+                                }
+                                .padding(8)
+                            }
 
                         if !sessionManager.hasVideoSignal {
                             Text("No video signal")
@@ -124,6 +197,27 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Audio Capture")
                     .font(.headline)
+
+                if deviceManager.audioDevices.isEmpty {
+                    Text("No audio devices found.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Select audio devices to mix:")
+                            .font(.subheadline)
+                        ForEach(deviceManager.audioDevices, id: \.uniqueID) { device in
+                            Toggle(isOn: Binding(
+                                get: { selectedAudioDeviceIDs.contains(device.uniqueID) },
+                                set: { isOn in
+                                    if isOn { selectedAudioDeviceIDs.insert(device.uniqueID) }
+                                    else { selectedAudioDeviceIDs.remove(device.uniqueID) }
+                                }
+                            )) {
+                                Text(device.localizedName)
+                            }
+                        }
+                    }
+                }
 
                 if audioManager.isRunning {
                     Text("Audio input active")
@@ -332,7 +426,10 @@ struct ContentView: View {
             selectedVideoDeviceID = deviceManager.videoDevices.first?.uniqueID
             sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
-            audioManager.start()
+            selectedAudioDeviceIDs = Set(deviceManager.audioDevices.prefix(1).map(\.uniqueID))
+            audioManager.start(withDeviceIDs: Array(selectedAudioDeviceIDs))
+            loadRecentRecordings()
+            timestampText = timestampString()
         }
         .onChange(of: deviceManager.videoDevices.map(\.uniqueID)) { _, _ in
             if let selected = selectedVideoDeviceID,
@@ -344,8 +441,23 @@ struct ContentView: View {
             sessionManager.configureSession(with: selectedVideoDevice())
             sessionManager.startSession()
         }
+        .onChange(of: deviceManager.audioDevices.map(\.uniqueID)) { _, _ in
+            selectedAudioDeviceIDs = selectedAudioDeviceIDs.filter { id in
+                deviceManager.audioDevices.contains(where: { $0.uniqueID == id })
+            }
+            if selectedAudioDeviceIDs.isEmpty {
+                selectedAudioDeviceIDs = Set(deviceManager.audioDevices.prefix(1).map(\.uniqueID))
+            }
+            audioManager.start(withDeviceIDs: Array(selectedAudioDeviceIDs))
+        }
+        .onChange(of: selectedAudioDeviceIDs) { _, newValue in
+            audioManager.start(withDeviceIDs: Array(newValue))
+        }
         .onChange(of: sessionManager.selectedFormatID) { _, _ in
             sessionManager.applySelectedFormat()
+        }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            timestampText = timestampString()
         }
     }
 
