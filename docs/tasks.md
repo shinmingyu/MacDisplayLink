@@ -77,31 +77,31 @@
 ### Step 1.2: 메인 화면 UI 구현 (Mock 데이터)
 
 #### Mock ViewModel 구현
-- [ ] `ViewModels/MockPreviewViewModel.swift` 생성
+- [x] `ViewModels/MockPreviewViewModel.swift` 생성
   - `@Published var currentFrame: Image?` (테스트 이미지 사용)
   - `@Published var hasSignal: Bool = true`
   - `@Published var signalInfo: String = "1920×1080 @ 60fps"`
   - 타이머로 프레임 업데이트 시뮬레이션
 
-- [ ] `ViewModels/MockRecordingViewModel.swift` 생성
+- [x] `ViewModels/MockRecordingViewModel.swift` 생성
   - `@Published var isRecording: Bool = false`
   - `@Published var recordingTime: String = "00:00:00"`
   - `func toggleRecording()` (Mock 동작)
   - 타이머로 녹화 시간 증가 시뮬레이션
 
-- [ ] `ViewModels/MockAudioViewModel.swift` 생성
+- [x] `ViewModels/MockAudioViewModel.swift` 생성
   - `@Published var audioLevel: Float = 0.3`
   - 타이머로 레벨 변동 시뮬레이션 (0.0~1.0)
 
 #### PreviewView 구현
-- [ ] `Views/PreviewView.swift` 생성
+- [x] `Views/PreviewView.swift` 생성
   - Mock 이미지 표시 (aspectRatio로 16:9 유지)
   - 신호 없음 시: 📡 + "No Signal" 오버레이
   - 배경색: 검은색
   - ZStack으로 신호 정보 텍스트 오버레이
 
 #### MainView 레이아웃 구성
-- [ ] `Views/MainView.swift` 생성
+- [x] `Views/MainView.swift` 생성
   - PreviewView를 중앙에 배치
   - 컨트롤 표시/숨김 토글 상태 관리
   - `@State var showControls: Bool = true`
@@ -109,7 +109,7 @@
   - 프리뷰 클릭 시 컨트롤 토글
 
 #### ControlsOverlay 구현
-- [ ] `Views/ControlsOverlay.swift` 생성
+- [x] `Views/ControlsOverlay.swift` 생성
   - 왼쪽 상단: 설정 버튼 (⚙️)
   - 하단 왼쪽: AudioLevelView
   - 하단 중앙: RecordButton
@@ -117,14 +117,14 @@
   - 반투명 배경 및 애니메이션
 
 #### RecordButton 구현
-- [ ] `Views/RecordButton.swift` 생성
+- [x] `Views/RecordButton.swift` 생성
   - 녹화 전: ⏺ (빨간 원)
   - 녹화 중: ⏹ (빨간 사각형)
   - 애니메이션: 녹화 중 펄스 효과
   - 클릭 시 `toggleRecording()` 호출
 
 #### AudioLevelView 구현
-- [ ] `Views/AudioLevelView.swift` 생성
+- [x] `Views/AudioLevelView.swift` 생성
   - 수평 레벨 바 (ProgressView 또는 커스텀 뷰)
   - 0.0~0.6: 녹색
   - 0.6~0.8: 노란색
@@ -132,17 +132,17 @@
   - Mock 데이터로 색상 변화 확인
 
 #### 창 크기 제한
-- [ ] MainView에 최소 크기 설정: 1280×720
+- [x] MainView에 최소 크기 설정: 1280×720
   - `.frame(minWidth: 1280, minHeight: 720)`
 
 #### ✅ 테스트
-- [ ] 앱 빌드 및 실행 성공
-- [ ] Mock 이미지가 16:9 비율로 표시되는지 확인
-- [ ] 프리뷰 클릭 시 컨트롤이 표시/숨김되는지 확인
-- [ ] 녹화 버튼 클릭 시 ⏺ ↔ ⏹ 전환 확인
-- [ ] Mock 녹화 시간이 증가하는지 확인
-- [ ] 오디오 레벨 바가 색상 변화하는지 확인
-- [ ] SwiftUI Preview로 UI 레이아웃 확인
+- [x] 앱 빌드 및 실행 성공
+- [x] Mock 이미지가 16:9 비율로 표시되는지 확인
+- [x] 프리뷰 클릭 시 컨트롤이 표시/숨김되는지 확인
+- [x] 녹화 버튼 클릭 시 ⏺ ↔ ⏹ 전환 확인
+- [x] Mock 녹화 시간이 증가하는지 확인
+- [x] 오디오 레벨 바가 색상 변화하는지 확인
+- [x] SwiftUI Preview로 UI 레이아웃 확인
 
 ---
 
