@@ -74,97 +74,54 @@
 
 ---
 
-### Step 1.2: 캡쳐 디바이스 인식
+### Step 1.2: 메인 화면 UI 구현 (Mock 데이터)
 
-#### DeviceManager 서비스 구현
-- [ ] `Services/DeviceManager.swift` 생성
-  - `@Published var captureDevices: [AVCaptureDevice]`
-  - `func refreshDevices()` 메서드 구현
-  - `.external` 타입 디바이스만 필터링
-  - 내장 카메라 제외 로직 추가
+#### Mock ViewModel 구현
+- [ ] `ViewModels/MockPreviewViewModel.swift` 생성
+  - `@Published var currentFrame: Image?` (테스트 이미지 사용)
+  - `@Published var hasSignal: Bool = true`
+  - `@Published var signalInfo: String = "1920×1080 @ 60fps"`
+  - 타이머로 프레임 업데이트 시뮬레이션
 
-#### 디바이스 연결/해제 감지
-- [ ] `AVCaptureDevice.wasConnectedNotification` 옵저버 등록
-- [ ] `AVCaptureDevice.wasDisconnectedNotification` 옵저버 등록
-- [ ] 디바이스 목록 자동 새로고침 구현
+- [ ] `ViewModels/MockRecordingViewModel.swift` 생성
+  - `@Published var isRecording: Bool = false`
+  - `@Published var recordingTime: String = "00:00:00"`
+  - `func toggleRecording()` (Mock 동작)
+  - 타이머로 녹화 시간 증가 시뮬레이션
 
-#### ViewModel 구현
-- [ ] `ViewModels/DeviceViewModel.swift` 생성
-  - DeviceManager를 주입받아 디바이스 목록 관리
-  - `@Published var selectedDevice: AVCaptureDevice?`
-
-#### ✅ 테스트
-- [ ] 캡쳐카드 연결 시 목록에 표시 확인
-- [ ] 캡쳐카드 연결 해제 시 목록에서 제거 확인
-- [ ] 내장 카메라가 목록에 없는지 확인
-- [ ] 콘솔 로그로 디바이스 정보 출력 확인
-
----
-
-### Step 1.3: 비디오 프리뷰
-
-#### CaptureSessionManager 서비스 구현
-- [ ] `Services/CaptureSessionManager.swift` 생성
-  - `AVCaptureSession` 인스턴스 관리
-  - `func configureSession(device: AVCaptureDevice)` 구현
-  - `AVCaptureVideoDataOutput` 추가
-  - `.alwaysDiscardsLateVideoFrames = true` 설정
-
-#### 프레임 처리 및 렌더링
-- [ ] `AVCaptureVideoDataOutputSampleBufferDelegate` 구현
-  - `didOutput sampleBuffer` 콜백에서 프레임 수신
-  - `CVPixelBuffer`를 `CIImage`로 변환
-  - `CIImage`를 `CGImage`로 변환
-  - SwiftUI `Image`로 변환
-
-#### PreviewViewModel 구현
-- [ ] `ViewModels/PreviewViewModel.swift` 생성
-  - `@Published var currentFrame: Image?`
-  - `@Published var hasSignal: Bool`
-  - `@Published var signalInfo: String?` (해상도/프레임레이트)
-  - 신호 정보 파싱 로직
+- [ ] `ViewModels/MockAudioViewModel.swift` 생성
+  - `@Published var audioLevel: Float = 0.3`
+  - 타이머로 레벨 변동 시뮬레이션 (0.0~1.0)
 
 #### PreviewView 구현
 - [ ] `Views/PreviewView.swift` 생성
-  - `Image` 표시 (aspectRatio로 16:9 유지)
+  - Mock 이미지 표시 (aspectRatio로 16:9 유지)
   - 신호 없음 시: 📡 + "No Signal" 오버레이
   - 배경색: 검은색
+  - ZStack으로 신호 정보 텍스트 오버레이
 
-#### 창 크기 제한
-- [ ] 최소 크기 설정: 1280×720
-  - `.frame(minWidth: 1280, minHeight: 720)`
+#### MainView 레이아웃 구성
+- [ ] `Views/MainView.swift` 생성
+  - PreviewView를 중앙에 배치
+  - 컨트롤 표시/숨김 토글 상태 관리
+  - `@State var showControls: Bool = true`
+  - ZStack으로 ControlsOverlay 추가
+  - 프리뷰 클릭 시 컨트롤 토글
 
-#### ✅ 테스트
-- [ ] 캡쳐카드 연결 후 영상이 화면에 표시되는지 확인
-- [ ] 신호 없음 상태에서 "No Signal" 표시 확인
-- [ ] 창 크기 조절 시 16:9 비율 유지 확인 (letterbox)
-- [ ] 입력 신호 정보 표시 확인 (해상도/fps)
+#### ControlsOverlay 구현
+- [ ] `Views/ControlsOverlay.swift` 생성
+  - 왼쪽 상단: 설정 버튼 (⚙️)
+  - 하단 왼쪽: AudioLevelView
+  - 하단 중앙: RecordButton
+  - 하단 오른쪽: 녹화 시간 표시
+  - 반투명 배경 및 애니메이션
 
----
-
-### Step 1.4: 오디오 모니터링
-
-#### AudioCaptureManager 서비스 구현
-- [ ] `Services/AudioCaptureManager.swift` 생성
-  - `AVCaptureSession`에 오디오 입력 추가
-  - `AVCaptureAudioDataOutput` 추가
-  - `AVSampleBufferAudioRenderer` 초기화
-
-#### 오디오 실시간 재생
-- [ ] `AVCaptureAudioDataOutputSampleBufferDelegate` 구현
-  - `didOutput sampleBuffer` 콜백에서 오디오 수신
-  - `AVSampleBufferAudioRenderer.enqueue(sampleBuffer)` 호출
-
-#### 오디오 레벨 계산
-- [ ] RMS (Root Mean Square) 방식으로 레벨 계산
-  - `CMSampleBuffer`에서 오디오 데이터 추출
-  - PCM 데이터를 Float 배열로 변환
-  - RMS 값 계산 (0.0 ~ 1.0)
-
-#### AudioViewModel 구현
-- [ ] `ViewModels/AudioViewModel.swift` 생성
-  - `@Published var audioLevel: Float` (0.0 ~ 1.0)
-  - 레벨 값을 색상으로 매핑 (녹색 → 노란색 → 빨간색)
+#### RecordButton 구현
+- [ ] `Views/RecordButton.swift` 생성
+  - 녹화 전: ⏺ (빨간 원)
+  - 녹화 중: ⏹ (빨간 사각형)
+  - 애니메이션: 녹화 중 펄스 효과
+  - 클릭 시 `toggleRecording()` 호출
 
 #### AudioLevelView 구현
 - [ ] `Views/AudioLevelView.swift` 생성
@@ -172,15 +129,220 @@
   - 0.0~0.6: 녹색
   - 0.6~0.8: 노란색
   - 0.8~1.0: 빨간색
+  - Mock 데이터로 색상 변화 확인
+
+#### 창 크기 제한
+- [ ] MainView에 최소 크기 설정: 1280×720
+  - `.frame(minWidth: 1280, minHeight: 720)`
+
+#### ✅ 테스트
+- [ ] 앱 빌드 및 실행 성공
+- [ ] Mock 이미지가 16:9 비율로 표시되는지 확인
+- [ ] 프리뷰 클릭 시 컨트롤이 표시/숨김되는지 확인
+- [ ] 녹화 버튼 클릭 시 ⏺ ↔ ⏹ 전환 확인
+- [ ] Mock 녹화 시간이 증가하는지 확인
+- [ ] 오디오 레벨 바가 색상 변화하는지 확인
+- [ ] SwiftUI Preview로 UI 레이아웃 확인
+
+---
+
+### Step 1.3: 설정 화면 UI 구현
+
+#### Mock SettingsViewModel 구현
+- [ ] `ViewModels/MockSettingsViewModel.swift` 생성
+  - `@Published var inputResolution: String = "1080p"`
+  - `@Published var recordingResolution: String = "1080p"`
+  - `@Published var frameRate: Int = 60`
+  - `@Published var videoBitrate: Int = 12000`
+  - `@Published var audioBitrate: Int = 192`
+  - UserDefaults 저장/불러오기 로직
+
+#### SettingsView 생성
+- [ ] `Views/SettingsView.swift` 생성
+  - TabView로 3개 탭 구성
+  - 탭 1: 📹 영상
+  - 탭 2: 🔊 오디오
+  - 탭 3: 💾 저장
+  - `.frame(width: 500, height: 400)` 고정 크기
+
+#### 영상 설정 탭
+- [ ] `Views/VideoSettingsTab.swift` 생성
+  - 입력 해상도 선택
+    - Picker: 자동 / 720p / 1080p / 1440p / 4K
+  - 녹화 해상도 선택
+    - Picker: 입력과 동일 / 720p / 1080p / 1440p / 4K
+  - 프레임레이트 선택
+    - Picker: 30fps / 60fps / 120fps
+  - 비디오 비트레이트 슬라이더
+    - 범위: 5000~20000 kbps
+    - 기본값: 12000 kbps
+    - 실시간 값 표시 (Text)
+
+#### 오디오 설정 탭
+- [ ] `Views/AudioSettingsTab.swift` 생성
+  - 오디오 입력 소스 (읽기 전용)
+    - Text: "캡쳐 카드"
+  - 오디오 비트레이트 선택
+    - Picker: 128 kbps / 192 kbps / 256 kbps
+
+#### 저장 설정 탭
+- [ ] `Views/StorageSettingsTab.swift` 생성
+  - 저장 경로 표시 (읽기 전용)
+    - Text: `~/Library/Containers/.../MacDisplayLink/`
+  - "Finder에서 보기" 버튼
+    - `NSWorkspace.shared.selectFile()` 호출
+    - 폴더 없으면 자동 생성
+  - 파일명 형식 표시 (읽기 전용)
+    - Text: "MacDisplayLink_YYYYMMDD_HHMMSS.mp4"
+
+#### 설정 버튼 연결
+- [ ] MainView에서 설정 버튼 클릭 시 Sheet 표시
+  - `@State var showSettings: Bool = false`
+  - `.sheet(isPresented: $showSettings) { SettingsView() }`
+
+#### UserDefaults 연동
+- [ ] 설정값을 UserDefaults에 자동 저장
+  - 키: "inputResolution", "recordingResolution", etc.
+  - `.onChange(of: value)` 사용
+- [ ] 앱 시작 시 UserDefaults에서 불러오기
+  - `init()` 또는 `.onAppear`
+
+#### ✅ 테스트
+- [ ] 설정 버튼 클릭 시 Sheet가 표시되는지 확인
+- [ ] 3개 탭이 정상 표시되는지 확인
+- [ ] 각 설정값 변경 시 즉시 반영되는지 확인
+- [ ] "Finder에서 보기" 버튼 클릭 시 폴더가 열리는지 확인
+- [ ] 앱 재시작 후 설정값이 유지되는지 확인
+- [ ] SwiftUI Preview로 각 탭 UI 확인
+
+---
+
+### Step 1.4: 캡쳐 디바이스 인식 로직 + UI 연결
+
+#### DeviceManager 서비스 구현
+- [ ] `Services/DeviceManager.swift` 생성
+  - `@Published var captureDevices: [AVCaptureDevice]`
+  - `func refreshDevices()` 메서드 구현
+  - `.external` 타입 디바이스만 필터링
+  - 내장 카메라 제외 로직 추가
+  - `externalCaptureDevice` 우선 선택
+
+#### 디바이스 연결/해제 감지
+- [ ] `AVCaptureDevice.wasConnectedNotification` 옵저버 등록
+- [ ] `AVCaptureDevice.wasDisconnectedNotification` 옵저버 등록
+- [ ] 디바이스 목록 자동 새로고침 구현
+- [ ] 메인 스레드에서 `@Published` 업데이트
+
+#### DeviceViewModel 구현 (Real)
+- [ ] `ViewModels/DeviceViewModel.swift` 생성
+  - DeviceManager를 주입받아 디바이스 목록 관리
+  - `@Published var selectedDevice: AVCaptureDevice?`
+  - `@Published var isDeviceConnected: Bool`
+  - 첫 번째 디바이스 자동 선택 로직
+
+#### MainView에 디바이스 상태 표시
+- [ ] 디바이스 미연결 시 UI 표시
+  - 상단에 경고 배너: "⚠️ 캡쳐 카드가 연결되지 않았습니다"
+  - PreviewView에 "No Signal" 표시
+- [ ] MockPreviewViewModel → 실제 DeviceViewModel로 교체
+
+#### ✅ 테스트
+- [ ] 앱 시작 시 디바이스 목록 자동 검색 확인
+- [ ] 캡쳐카드 연결 시 목록에 표시 확인
+- [ ] 캡쳐카드 연결 해제 시 목록에서 제거 확인
+- [ ] 내장 카메라가 목록에 없는지 확인
+- [ ] 디바이스 미연결 시 경고 UI 표시 확인
+- [ ] 콘솔 로그로 디바이스 정보 출력 확인
+
+---
+
+### Step 1.5: 비디오 프리뷰 로직 구현
+
+#### CaptureSessionManager 서비스 구현
+- [ ] `Services/CaptureSessionManager.swift` 생성
+  - `AVCaptureSession` 인스턴스 관리
+  - `func configureSession(device: AVCaptureDevice)` 구현
+  - `AVCaptureVideoDataOutput` 추가
+  - `.alwaysDiscardsLateVideoFrames = true` 설정
+  - 백그라운드 큐에서 세션 실행
+
+#### 프레임 처리 및 렌더링
+- [ ] `AVCaptureVideoDataOutputSampleBufferDelegate` 구현
+  - `didOutput sampleBuffer` 콜백에서 프레임 수신
+  - `CVPixelBuffer`를 `CIImage`로 변환
+  - `CIImage`를 `CGImage`로 변환
+  - SwiftUI `Image`로 변환
+  - 메인 스레드에서 `@Published` 업데이트
+
+#### PreviewViewModel 구현 (Real)
+- [ ] `ViewModels/PreviewViewModel.swift` 생성
+  - `@Published var currentFrame: Image?`
+  - `@Published var hasSignal: Bool`
+  - `@Published var signalInfo: String?` (해상도/프레임레이트)
+  - CaptureSessionManager 연동
+  - 신호 정보 파싱 로직 (`CMFormatDescription`)
+
+#### MockPreviewViewModel 제거 및 교체
+- [ ] MainView에서 MockPreviewViewModel → PreviewViewModel로 교체
+- [ ] PreviewView에 실제 프레임 데이터 바인딩
+
+#### 창 크기 제한 (16:9 비율)
+- [ ] PreviewView에서 aspectRatio 적용
+  - `.aspectRatio(16/9, contentMode: .fit)`
+- [ ] 레터박스 처리 (상하/좌우 검은 영역)
+
+#### ✅ 테스트
+- [ ] 캡쳐카드 연결 후 영상이 화면에 표시되는지 확인
+- [ ] 신호 없음 상태에서 "No Signal" 표시 확인
+- [ ] 창 크기 조절 시 16:9 비율 유지 확인 (letterbox)
+- [ ] 입력 신호 정보 표시 확인 (해상도/fps)
+- [ ] 프레임 드롭 없이 부드럽게 재생되는지 확인
+- [ ] 지연 시간 측정 (<150ms 목표)
+
+---
+
+### Step 1.6: 오디오 모니터링 로직 구현
+
+#### AudioCaptureManager 서비스 구현
+- [ ] `Services/AudioCaptureManager.swift` 생성
+  - `AVCaptureSession`에 오디오 입력 추가
+  - `AVCaptureAudioDataOutput` 추가
+  - `AVSampleBufferAudioRenderer` 초기화
+  - 백그라운드 큐에서 오디오 처리
+
+#### 오디오 실시간 재생
+- [ ] `AVCaptureAudioDataOutputSampleBufferDelegate` 구현
+  - `didOutput sampleBuffer` 콜백에서 오디오 수신
+  - `AVSampleBufferAudioRenderer.enqueue(sampleBuffer)` 호출
+  - 오디오 싱크 처리
+
+#### 오디오 레벨 계산
+- [ ] RMS (Root Mean Square) 방식으로 레벨 계산
+  - `CMSampleBuffer`에서 오디오 데이터 추출
+  - PCM 데이터를 Float 배열로 변환
+  - RMS 값 계산 (0.0 ~ 1.0)
+  - 메인 스레드에서 `@Published` 업데이트
+
+#### AudioViewModel 구현 (Real)
+- [ ] `ViewModels/AudioViewModel.swift` 생성
+  - `@Published var audioLevel: Float` (0.0 ~ 1.0)
+  - AudioCaptureManager 연동
+  - 레벨 값을 색상으로 매핑 (녹색 → 노란색 → 빨간색)
+
+#### MockAudioViewModel 제거 및 교체
+- [ ] MainView에서 MockAudioViewModel → AudioViewModel로 교체
+- [ ] AudioLevelView에 실제 오디오 레벨 바인딩
 
 #### ✅ 테스트
 - [ ] 캡쳐카드에서 오디오가 스피커로 출력되는지 확인
 - [ ] 오디오 레벨 바가 소리에 반응하는지 확인
 - [ ] 소리가 클 때 빨간색으로 변하는지 확인
+- [ ] 영상과 음성이 동기화되는지 확인
+- [ ] 오디오 딜레이 확인 (<100ms 목표)
 
 ---
 
-### Step 1.5: 기본 녹화
+### Step 1.7: 녹화 기능 구현
 
 #### RecordingManager 서비스 구현
 - [ ] `Services/RecordingManager.swift` 생성
@@ -193,77 +355,56 @@
 #### 파일 저장 경로 설정
 - [ ] 저장 폴더 생성 로직
   - 경로: `~/Library/Containers/com.echo.MacDisplayLink/Data/Documents/MacDisplayLink/`
-  - 폴더 없으면 자동 생성
+  - `FileManager`로 폴더 없으면 자동 생성
+  - 에러 처리
 
 #### 자동 파일명 생성
 - [ ] 파일명 포맷: `MacDisplayLink_YYYYMMDD_HHMMSS.mp4`
   - `DateFormatter` 사용
   - 타임스탬프 포맷: `yyyyMMdd_HHmmss`
+  - 파일 중복 방지 로직
 
 #### 비디오/오디오 인코딩
 - [ ] `AVAssetWriterInput` 생성 (비디오)
   - 코덱: H.264 (kCMVideoCodecType_H264)
-  - 비트레이트: 12000 kbps (기본값)
-  - 해상도: 1080p (기본값)
-  - 프레임레이트: 60fps (기본값)
+  - 비트레이트: SettingsViewModel에서 가져오기 (기본 12000 kbps)
+  - 해상도: SettingsViewModel에서 가져오기 (기본 1080p)
+  - 프레임레이트: SettingsViewModel에서 가져오기 (기본 60fps)
 - [ ] `AVAssetWriterInput` 생성 (오디오)
   - 포맷: AAC
-  - 비트레이트: 192 kbps (기본값)
+  - 비트레이트: SettingsViewModel에서 가져오기 (기본 192 kbps)
 
 #### 샘플 버퍼 쓰기
-- [ ] 비디오 프레임을 `AVAssetWriter`에 추가
-- [ ] 오디오 샘플을 `AVAssetWriter`에 추가
-- [ ] 타이밍 동기화 처리
+- [ ] CaptureSessionManager에서 비디오 프레임 전달
+- [ ] AudioCaptureManager에서 오디오 샘플 전달
+- [ ] RecordingManager가 AVAssetWriter에 추가
+- [ ] 타이밍 동기화 처리 (PTS)
 
-#### RecordingViewModel 구현
+#### RecordingViewModel 구현 (Real)
 - [ ] `ViewModels/RecordingViewModel.swift` 생성
   - `@Published var isRecording: Bool`
   - `@Published var recordingTime: String` (포맷: "00:05:23")
   - `func toggleRecording()` 메서드
+  - RecordingManager 연동
+  - 타이머로 녹화 시간 업데이트
+
+#### MockRecordingViewModel 제거 및 교체
+- [ ] MainView에서 MockRecordingViewModel → RecordingViewModel로 교체
+- [ ] RecordButton에 실제 녹화 로직 연결
+
+#### 녹화 중단 처리
+- [ ] 녹화 중 디바이스 연결 해제 시 자동 저장
+- [ ] 앱 종료 시 녹화 중이면 자동 저장
+- [ ] `ScenePhase`로 앱 상태 감지
 
 #### ✅ 테스트
 - [ ] 녹화 시작 후 파일이 생성되는지 확인
 - [ ] 녹화 정지 후 파일이 재생되는지 확인
 - [ ] 영상과 음성이 모두 녹화되는지 확인
 - [ ] 파일명 형식이 올바른지 확인
-
----
-
-### Step 1.6: 기본 UI
-
-#### MainView 레이아웃 구성
-- [ ] `Views/MainView.swift` 생성
-  - PreviewView (ZStack으로 오버레이)
-  - 컨트롤 표시/숨김 토글 상태 관리
-  - `@State var showControls: Bool = false`
-
-#### 컨트롤 오버레이 구현
-- [ ] `Views/ControlsOverlay.swift` 생성
-  - 왼쪽 상단: 설정 버튼 (⚙️)
-  - 하단 왼쪽: AudioLevelView
-  - 하단 중앙: RecordButton
-  - 하단 오른쪽: 녹화 시간 표시
-
-#### RecordButton 구현
-- [ ] `Views/RecordButton.swift` 생성
-  - 녹화 전: ⏺ (빨간 원)
-  - 녹화 중: ⏹ (빨간 사각형)
-  - 애니메이션: 녹화 중 펄스 효과
-
-#### 프리뷰 클릭 제스처
-- [ ] `.onTapGesture` 추가
-  - `showControls.toggle()` 호출
-  - 컨트롤 표시/숨김 애니메이션
-
-#### 녹화 시간 포맷팅
-- [ ] `formatDuration(_ duration: TimeInterval) -> String`
-  - 포맷: "00:05:23" (hh:mm:ss)
-
-#### ✅ 테스트
-- [ ] 프리뷰 클릭 시 컨트롤이 표시/숨김되는지 확인
-- [ ] 녹화 버튼 클릭 시 ⏺ ↔ ⏹ 전환 확인
 - [ ] 녹화 시간이 실시간으로 업데이트되는지 확인
-- [ ] 레이아웃이 깔끔하게 표시되는지 확인
+- [ ] Finder에서 파일 확인
+- [ ] 설정값(해상도, fps, 비트레이트)이 녹화에 반영되는지 확인
 
 ---
 
