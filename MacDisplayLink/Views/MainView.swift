@@ -37,9 +37,7 @@ struct MainView: View {
         }
         .frame(minWidth: 1280, minHeight: 720)
         .sheet(isPresented: $showSettings) {
-            Text("Settings View (Coming in Step 1.3)")
-                .font(.title)
-                .frame(width: 500, height: 400)
+            SettingsView()
         }
     }
 }

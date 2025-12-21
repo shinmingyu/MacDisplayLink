@@ -30,12 +30,12 @@
 ### Step 1.1: 프로젝트 설정
 
 #### 환경 설정
-- [ ] macOS 13+ 개발 환경 확인
-- [ ] Xcode 최신 버전 설치 확인
-- [ ] 캡쳐 카드 연결 테스트
+- [x] macOS 13+ 개발 환경 확인
+- [x] Xcode 최신 버전 설치 확인
+- [x] 캡쳐 카드 연결 테스트
 
 #### 프로젝트 생성
-- [ ] Xcode에서 새 macOS App 프로젝트 생성
+- [x] Xcode에서 새 macOS App 프로젝트 생성
   - Project Name: `MacDisplayLink`
   - Organization Identifier: `com.echo`
   - Interface: SwiftUI
@@ -43,23 +43,23 @@
   - Minimum Deployment: macOS 13.0
 
 #### Info.plist 권한 추가
-- [ ] `NSCameraUsageDescription` 추가
+- [x] `NSCameraUsageDescription` 추가
   - 값: "캡쳐 카드의 비디오 입력을 받기 위해 카메라 권한이 필요합니다."
-- [ ] `NSMicrophoneUsageDescription` 추가
+- [x] `NSMicrophoneUsageDescription` 추가
   - 값: "캡쳐 카드의 오디오 입력을 받기 위해 마이크 권한이 필요합니다."
 
 #### Entitlements 설정
-- [ ] App Sandbox 활성화
+- [x] App Sandbox 활성화
   - `com.apple.security.app-sandbox` = YES
-- [ ] 카메라 권한 추가
+- [x] 카메라 권한 추가
   - `com.apple.security.device.camera` = YES
-- [ ] 마이크 권한 추가
+- [x] 마이크 권한 추가
   - `com.apple.security.device.audio-input` = YES
-- [ ] 파일 읽기/쓰기 권한 추가
+- [x] 파일 읽기/쓰기 권한 추가
   - `com.apple.security.files.user-selected.read-write` = YES
 
 #### MVVM 기본 구조 생성
-- [ ] 폴더 구조 생성
+- [x] 폴더 구조 생성
   ```
   MacDisplayLink/
   ├── Models/
@@ -69,8 +69,8 @@
   ```
 
 #### ✅ 테스트
-- [ ] 프로젝트 빌드 성공 확인
-- [ ] 앱 실행 시 기본 SwiftUI 화면 표시 확인
+- [x] 프로젝트 빌드 성공 확인
+- [x] 앱 실행 시 기본 SwiftUI 화면 표시 확인
 
 ---
 
@@ -149,7 +149,7 @@
 ### Step 1.3: 설정 화면 UI 구현
 
 #### Mock SettingsViewModel 구현
-- [ ] `ViewModels/MockSettingsViewModel.swift` 생성
+- [x] `ViewModels/MockSettingsViewModel.swift` 생성
   - `@Published var inputResolution: String = "1080p"`
   - `@Published var recordingResolution: String = "1080p"`
   - `@Published var frameRate: Int = 60`
@@ -158,15 +158,15 @@
   - UserDefaults 저장/불러오기 로직
 
 #### SettingsView 생성
-- [ ] `Views/SettingsView.swift` 생성
+- [x] `Views/SettingsView.swift` 생성
   - TabView로 3개 탭 구성
   - 탭 1: 📹 영상
   - 탭 2: 🔊 오디오
   - 탭 3: 💾 저장
-  - `.frame(width: 500, height: 400)` 고정 크기
+  - `.frame(width: 600, height: 500)` 고정 크기
 
 #### 영상 설정 탭
-- [ ] `Views/VideoSettingsTab.swift` 생성
+- [x] `Views/VideoSettingsTab.swift` 생성
   - 입력 해상도 선택
     - Picker: 자동 / 720p / 1080p / 1440p / 4K
   - 녹화 해상도 선택
@@ -179,41 +179,41 @@
     - 실시간 값 표시 (Text)
 
 #### 오디오 설정 탭
-- [ ] `Views/AudioSettingsTab.swift` 생성
+- [x] `Views/AudioSettingsTab.swift` 생성
   - 오디오 입력 소스 (읽기 전용)
-    - Text: "캡쳐 카드"
+    - Text: "캡쳐 카드 (시뮬레이션)"
   - 오디오 비트레이트 선택
-    - Picker: 128 kbps / 192 kbps / 256 kbps
+    - Picker: 128 kbps / 192 kbps / 256 kbps / 320 kbps
 
 #### 저장 설정 탭
-- [ ] `Views/StorageSettingsTab.swift` 생성
+- [x] `Views/StorageSettingsTab.swift` 생성
   - 저장 경로 표시 (읽기 전용)
-    - Text: `~/Library/Containers/.../MacDisplayLink/`
-  - "Finder에서 보기" 버튼
-    - `NSWorkspace.shared.selectFile()` 호출
+    - Text: `~/Movies/MacDisplayLink`
+  - "Finder에서 열기" 버튼
+    - `NSWorkspace.shared.open()` 호출
     - 폴더 없으면 자동 생성
   - 파일명 형식 표시 (읽기 전용)
-    - Text: "MacDisplayLink_YYYYMMDD_HHMMSS.mp4"
+    - Text: "Recording_yyyyMMdd_HHmmss.mp4"
 
 #### 설정 버튼 연결
-- [ ] MainView에서 설정 버튼 클릭 시 Sheet 표시
+- [x] MainView에서 설정 버튼 클릭 시 Sheet 표시
   - `@State var showSettings: Bool = false`
   - `.sheet(isPresented: $showSettings) { SettingsView() }`
 
 #### UserDefaults 연동
-- [ ] 설정값을 UserDefaults에 자동 저장
+- [x] 설정값을 UserDefaults에 자동 저장
   - 키: "inputResolution", "recordingResolution", etc.
   - `.onChange(of: value)` 사용
-- [ ] 앱 시작 시 UserDefaults에서 불러오기
-  - `init()` 또는 `.onAppear`
+- [x] 앱 시작 시 UserDefaults에서 불러오기
+  - `init()` 메서드에서 `loadSettings()` 호출
 
 #### ✅ 테스트
-- [ ] 설정 버튼 클릭 시 Sheet가 표시되는지 확인
-- [ ] 3개 탭이 정상 표시되는지 확인
-- [ ] 각 설정값 변경 시 즉시 반영되는지 확인
-- [ ] "Finder에서 보기" 버튼 클릭 시 폴더가 열리는지 확인
-- [ ] 앱 재시작 후 설정값이 유지되는지 확인
-- [ ] SwiftUI Preview로 각 탭 UI 확인
+- [x] 설정 버튼 클릭 시 Sheet가 표시되는지 확인
+- [x] 3개 탭이 정상 표시되는지 확인
+- [x] 각 설정값 변경 시 즉시 반영되는지 확인
+- [x] "Finder에서 열기" 버튼 클릭 시 폴더가 열리는지 확인
+- [x] 앱 재시작 후 설정값이 유지되는지 확인
+- [x] SwiftUI Preview로 각 탭 UI 확인
 
 ---
 
