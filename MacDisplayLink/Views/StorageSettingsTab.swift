@@ -8,15 +8,18 @@
 import SwiftUI
 
 struct StorageSettingsTab: View {
+    @State private var displayPath: String = ""
+
     var body: some View {
         Form {
             Section("저장 위치") {
-                HStack {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("저장 경로")
-                    Spacer()
-                    Text("~/Movies/MacDisplayLink")
+                        .font(.subheadline)
+                    Text(displayPath)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                        .font(.caption)
+                        .lineLimit(2)
                         .truncationMode(.middle)
                 }
 
@@ -42,17 +45,33 @@ struct StorageSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear {
+            updateDisplayPath()
+        }
+    }
+
+    private func getRecordingsURL() -> URL {
+        // App Sandbox 환경에서 접근 가능한 Documents 디렉터리 사용
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documentsURL.appendingPathComponent("Recordings")
+    }
+
+    private func updateDisplayPath() {
+        let url = getRecordingsURL()
+        displayPath = url.path.replacingOccurrences(
+            of: FileManager.default.homeDirectoryForCurrentUser.path,
+            with: "~"
+        )
     }
 
     private func openInFinder() {
-        let homeURL = FileManager.default.homeDirectoryForCurrentUser
-        let moviesURL = homeURL.appendingPathComponent("Movies/MacDisplayLink")
+        let recordingsURL = getRecordingsURL()
 
         // 디렉터리가 없으면 생성
-        try? FileManager.default.createDirectory(at: moviesURL, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: recordingsURL, withIntermediateDirectories: true)
 
         // Finder에서 열기
-        NSWorkspace.shared.open(moviesURL)
+        NSWorkspace.shared.open(recordingsURL)
     }
 }
 
