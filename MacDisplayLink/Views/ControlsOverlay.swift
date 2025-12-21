@@ -14,8 +14,9 @@ struct ControlsOverlay: View {
 
     var body: some View {
         ZStack {
-            // 반투명 배경
+            // 반투명 배경 (클릭 무시)
             Color.black.opacity(0.3)
+                .allowsHitTesting(false)
 
             VStack {
                 // 상단: 설정 버튼
