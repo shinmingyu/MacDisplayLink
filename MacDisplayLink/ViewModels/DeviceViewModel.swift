@@ -20,17 +20,18 @@ class DeviceViewModel: ObservableObject {
     @Published var selectedDevice: AVCaptureDevice?
 
     private let deviceManager: DeviceManager
+    private let captureSessionManager: CaptureSessionManager
     private var cancellables = Set<AnyCancellable>()
 
-    init(deviceManager: DeviceManager = DeviceManager()) {
+    init(deviceManager: DeviceManager = DeviceManager(), captureSessionManager: CaptureSessionManager = CaptureSessionManager()) {
         self.deviceManager = deviceManager
+        self.captureSessionManager = captureSessionManager
 
         // 디바이스 목록 변경 감지
         deviceManager.$captureDevices
             .sink { [weak self] devices in
                 self?.captureDevices = devices
                 self?.isDeviceConnected = !devices.isEmpty
-                self?.updateSignalInfo()
             }
             .store(in: &cancellables)
 
@@ -38,38 +39,47 @@ class DeviceViewModel: ObservableObject {
         deviceManager.$selectedDevice
             .sink { [weak self] device in
                 self?.selectedDevice = device
-                self?.updateSignalInfo()
+                self?.configureCaptureSession(for: device)
+            }
+            .store(in: &cancellables)
+
+        // CaptureSessionManager의 프레임 변경 감지
+        captureSessionManager.$currentFrame
+            .sink { [weak self] cgImage in
+                guard let cgImage = cgImage else {
+                    self?.currentFrame = nil
+                    return
+                }
+                #if canImport(AppKit)
+                let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+                self?.currentFrame = Image(nsImage: nsImage)
+                #endif
+            }
+            .store(in: &cancellables)
+
+        // CaptureSessionManager의 신호 정보 변경 감지
+        captureSessionManager.$hasSignal
+            .sink { [weak self] hasSignal in
+                self?.hasSignal = hasSignal
+            }
+            .store(in: &cancellables)
+
+        captureSessionManager.$signalInfo
+            .sink { [weak self] signalInfo in
+                self?.signalInfo = signalInfo
             }
             .store(in: &cancellables)
     }
 
-    /// 신호 정보 업데이트
-    private func updateSignalInfo() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
-            if let device = self.deviceManager.selectedDevice {
-                // 디바이스가 있으면 신호 정보 표시
-                self.hasSignal = true
-                self.signalInfo = self.formatSignalInfo(for: device)
-            } else {
-                // 디바이스가 없으면 "No Signal"
-                self.hasSignal = false
-                self.signalInfo = "No Signal"
-            }
+    /// 캡쳐 세션 구성
+    private func configureCaptureSession(for device: AVCaptureDevice?) {
+        if let device = device {
+            print("🎥 [DeviceViewModel] 캡쳐 세션 시작: \(device.localizedName)")
+            captureSessionManager.configureSession(with: device)
+        } else {
+            print("⏹ [DeviceViewModel] 캡쳐 세션 중지")
+            captureSessionManager.stopSession()
         }
-    }
-
-    /// 디바이스 정보를 포맷팅하여 반환
-    private func formatSignalInfo(for device: AVCaptureDevice) -> String {
-        // 현재 활성화된 포맷 가져오기
-        let format = device.activeFormat
-        let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-
-        // 프레임레이트 가져오기
-        let frameRate = Int(Int64(device.activeVideoMaxFrameDuration.timescale) / device.activeVideoMaxFrameDuration.value)
-
-        return "\(dimensions.width)×\(dimensions.height) @ \(frameRate)fps"
     }
 
     /// 디바이스 새로고침

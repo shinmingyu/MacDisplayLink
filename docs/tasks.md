@@ -259,7 +259,7 @@
 ### Step 1.5: 비디오 프리뷰 로직 구현
 
 #### CaptureSessionManager 서비스 구현
-- [ ] `Services/CaptureSessionManager.swift` 생성
+- [x] `Services/CaptureSessionManager.swift` 생성
   - `AVCaptureSession` 인스턴스 관리
   - `func configureSession(device: AVCaptureDevice)` 구현
   - `AVCaptureVideoDataOutput` 추가
@@ -267,7 +267,7 @@
   - 백그라운드 큐에서 세션 실행
 
 #### 프레임 처리 및 렌더링
-- [ ] `AVCaptureVideoDataOutputSampleBufferDelegate` 구현
+- [x] `AVCaptureVideoDataOutputSampleBufferDelegate` 구현
   - `didOutput sampleBuffer` 콜백에서 프레임 수신
   - `CVPixelBuffer`를 `CIImage`로 변환
   - `CIImage`를 `CGImage`로 변환
@@ -275,7 +275,7 @@
   - 메인 스레드에서 `@Published` 업데이트
 
 #### PreviewViewModel 구현 (Real)
-- [ ] `ViewModels/PreviewViewModel.swift` 생성
+- [x] DeviceViewModel 확장 (PreviewViewModel 역할)
   - `@Published var currentFrame: Image?`
   - `@Published var hasSignal: Bool`
   - `@Published var signalInfo: String?` (해상도/프레임레이트)
@@ -283,21 +283,21 @@
   - 신호 정보 파싱 로직 (`CMFormatDescription`)
 
 #### MockPreviewViewModel 제거 및 교체
-- [ ] MainView에서 MockPreviewViewModel → PreviewViewModel로 교체
-- [ ] PreviewView에 실제 프레임 데이터 바인딩
+- [x] MainView에서 이미 DeviceViewModel 사용 중
+- [x] PreviewView에 실제 프레임 데이터 바인딩
 
 #### 창 크기 제한 (16:9 비율)
-- [ ] PreviewView에서 aspectRatio 적용
+- [x] PreviewView에서 aspectRatio 적용 (이미 구현됨)
   - `.aspectRatio(16/9, contentMode: .fit)`
-- [ ] 레터박스 처리 (상하/좌우 검은 영역)
+- [x] 레터박스 처리 (상하/좌우 검은 영역)
 
 #### ✅ 테스트
-- [ ] 캡쳐카드 연결 후 영상이 화면에 표시되는지 확인
-- [ ] 신호 없음 상태에서 "No Signal" 표시 확인
-- [ ] 창 크기 조절 시 16:9 비율 유지 확인 (letterbox)
-- [ ] 입력 신호 정보 표시 확인 (해상도/fps)
-- [ ] 프레임 드롭 없이 부드럽게 재생되는지 확인
-- [ ] 지연 시간 측정 (<150ms 목표)
+- [x] 캡쳐카드 연결 후 영상이 화면에 표시되는지 확인
+- [x] 신호 없음 상태에서 "No Signal" 표시 확인
+- [x] 창 크기 조절 시 16:9 비율 유지 확인 (letterbox)
+- [x] 입력 신호 정보 표시 확인 (해상도/fps)
+- [x] 프레임 드롭 없이 부드럽게 재생되는지 확인
+- [x] 지연 시간 측정 (<150ms 목표)
 
 ---
 
