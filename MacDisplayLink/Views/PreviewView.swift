@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct PreviewView: View {
-    @ObservedObject var viewModel: MockPreviewViewModel
+    @ObservedObject var viewModel: DeviceViewModel
 
     var body: some View {
         ZStack {
@@ -55,6 +55,6 @@ struct PreviewView: View {
 }
 
 #Preview {
-    PreviewView(viewModel: MockPreviewViewModel())
+    PreviewView(viewModel: DeviceViewModel())
         .frame(width: 1280, height: 720)
 }

@@ -220,7 +220,7 @@
 ### Step 1.4: 캡쳐 디바이스 인식 로직 + UI 연결
 
 #### DeviceManager 서비스 구현
-- [ ] `Services/DeviceManager.swift` 생성
+- [x] `Services/DeviceManager.swift` 생성
   - `@Published var captureDevices: [AVCaptureDevice]`
   - `func refreshDevices()` 메서드 구현
   - `.external` 타입 디바이스만 필터링
@@ -228,31 +228,31 @@
   - `externalCaptureDevice` 우선 선택
 
 #### 디바이스 연결/해제 감지
-- [ ] `AVCaptureDevice.wasConnectedNotification` 옵저버 등록
-- [ ] `AVCaptureDevice.wasDisconnectedNotification` 옵저버 등록
-- [ ] 디바이스 목록 자동 새로고침 구현
-- [ ] 메인 스레드에서 `@Published` 업데이트
+- [x] `AVCaptureDevice.wasConnectedNotification` 옵저버 등록
+- [x] `AVCaptureDevice.wasDisconnectedNotification` 옵저버 등록
+- [x] 디바이스 목록 자동 새로고침 구현
+- [x] 메인 스레드에서 `@Published` 업데이트
 
 #### DeviceViewModel 구현 (Real)
-- [ ] `ViewModels/DeviceViewModel.swift` 생성
+- [x] `ViewModels/DeviceViewModel.swift` 생성
   - DeviceManager를 주입받아 디바이스 목록 관리
   - `@Published var selectedDevice: AVCaptureDevice?`
   - `@Published var isDeviceConnected: Bool`
   - 첫 번째 디바이스 자동 선택 로직
 
 #### MainView에 디바이스 상태 표시
-- [ ] 디바이스 미연결 시 UI 표시
+- [x] 디바이스 미연결 시 UI 표시
   - 상단에 경고 배너: "⚠️ 캡쳐 카드가 연결되지 않았습니다"
   - PreviewView에 "No Signal" 표시
-- [ ] MockPreviewViewModel → 실제 DeviceViewModel로 교체
+- [x] MockPreviewViewModel → 실제 DeviceViewModel로 교체
 
 #### ✅ 테스트
-- [ ] 앱 시작 시 디바이스 목록 자동 검색 확인
-- [ ] 캡쳐카드 연결 시 목록에 표시 확인
-- [ ] 캡쳐카드 연결 해제 시 목록에서 제거 확인
-- [ ] 내장 카메라가 목록에 없는지 확인
-- [ ] 디바이스 미연결 시 경고 UI 표시 확인
-- [ ] 콘솔 로그로 디바이스 정보 출력 확인
+- [x] 앱 시작 시 디바이스 목록 자동 검색 확인
+- [x] 캡쳐카드 연결 시 목록에 표시 확인
+- [x] 캡쳐카드 연결 해제 시 목록에서 제거 확인
+- [x] 내장 카메라가 목록에 없는지 확인
+- [x] 디바이스 미연결 시 경고 UI 표시 확인
+- [x] 콘솔 로그로 디바이스 정보 출력 확인
 
 ---
 

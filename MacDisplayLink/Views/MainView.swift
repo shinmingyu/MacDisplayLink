@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MainView: View {
-    @StateObject private var previewViewModel = MockPreviewViewModel()
+    @StateObject private var deviceViewModel = DeviceViewModel()
     @StateObject private var recordingViewModel = MockRecordingViewModel()
     @StateObject private var audioViewModel = MockAudioViewModel()
 
@@ -18,12 +18,32 @@ struct MainView: View {
     var body: some View {
         ZStack {
             // PreviewView (배경)
-            PreviewView(viewModel: previewViewModel)
+            PreviewView(viewModel: deviceViewModel)
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         showControls.toggle()
                     }
                 }
+
+            // 디바이스 미연결 경고 배너
+            if !deviceViewModel.isDeviceConnected {
+                VStack {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.yellow)
+                        Text("캡쳐 카드가 연결되지 않았습니다")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Spacer()
+                    }
+                    .padding()
+                    .background(.red.opacity(0.8))
+                    .cornerRadius(8)
+                    .padding()
+
+                    Spacer()
+                }
+            }
 
             // ControlsOverlay (컨트롤)
             if showControls {
@@ -37,7 +57,7 @@ struct MainView: View {
         }
         .frame(minWidth: 1280, minHeight: 720)
         .sheet(isPresented: $showSettings) {
-            SettingsView()
+            SettingsView(deviceViewModel: deviceViewModel)
         }
     }
 }
