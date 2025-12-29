@@ -381,6 +381,17 @@ extension CaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelegate, A
             }
         }
 
+        // 비디오 신호가 없으면 오디오 레벨을 0으로 처리 (노이즈 방지)
+        guard hasSignal else {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.audioPreviewOutput.volume = 0.0  // 신호 없을 때 음소거
+                self.audioLevel = 0.0
+                self.smoothedAudioLevel = 0.0  // 스무딩 레벨도 리셋
+            }
+            return
+        }
+
         // 오디오 레벨 계산 (원본)
         let rawLevel = calculateAudioLevel(from: sampleBuffer)
 
