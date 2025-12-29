@@ -301,44 +301,44 @@
 
 ---
 
-### Step 1.6: 오디오 모니터링 로직 구현
+### Step 1.6: 오디오 모니터링 로직 구현 ✅
 
 #### AudioCaptureManager 서비스 구현
-- [ ] `Services/AudioCaptureManager.swift` 생성
+- [x] `Services/AudioCaptureManager.swift` 생성
   - `AVCaptureSession`에 오디오 입력 추가
   - `AVCaptureAudioDataOutput` 추가
   - `AVSampleBufferAudioRenderer` 초기화
   - 백그라운드 큐에서 오디오 처리
 
 #### 오디오 실시간 재생
-- [ ] `AVCaptureAudioDataOutputSampleBufferDelegate` 구현
+- [x] `AVCaptureAudioDataOutputSampleBufferDelegate` 구현
   - `didOutput sampleBuffer` 콜백에서 오디오 수신
   - `AVSampleBufferAudioRenderer.enqueue(sampleBuffer)` 호출
   - 오디오 싱크 처리
 
 #### 오디오 레벨 계산
-- [ ] RMS (Root Mean Square) 방식으로 레벨 계산
+- [x] RMS (Root Mean Square) 방식으로 레벨 계산
   - `CMSampleBuffer`에서 오디오 데이터 추출
   - PCM 데이터를 Float 배열로 변환
   - RMS 값 계산 (0.0 ~ 1.0)
   - 메인 스레드에서 `@Published` 업데이트
 
 #### AudioViewModel 구현 (Real)
-- [ ] `ViewModels/AudioViewModel.swift` 생성
+- [x] DeviceViewModel에 오디오 관련 속성 통합
   - `@Published var audioLevel: Float` (0.0 ~ 1.0)
   - AudioCaptureManager 연동
   - 레벨 값을 색상으로 매핑 (녹색 → 노란색 → 빨간색)
 
 #### MockAudioViewModel 제거 및 교체
-- [ ] MainView에서 MockAudioViewModel → AudioViewModel로 교체
-- [ ] AudioLevelView에 실제 오디오 레벨 바인딩
+- [x] MainView에서 MockAudioViewModel 제거
+- [x] AudioLevelView에 실제 오디오 레벨 바인딩 (DeviceViewModel 사용)
 
 #### ✅ 테스트
-- [ ] 캡쳐카드에서 오디오가 스피커로 출력되는지 확인
-- [ ] 오디오 레벨 바가 소리에 반응하는지 확인
-- [ ] 소리가 클 때 빨간색으로 변하는지 확인
-- [ ] 영상과 음성이 동기화되는지 확인
-- [ ] 오디오 딜레이 확인 (<100ms 목표)
+- [x] 캡쳐카드에서 오디오가 스피커로 출력되는지 확인
+- [x] 오디오 레벨 바가 소리에 반응하는지 확인 (스무딩 적용)
+- [x] 소리 크기에 따라 초록색/노란색/빨간색으로 변하는지 확인
+- [x] 영상과 음성이 동기화되는지 확인
+- [x] 오디오 딜레이 확인 (<100ms 목표)
 
 ---
 

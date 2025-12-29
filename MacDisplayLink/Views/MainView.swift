@@ -10,7 +10,6 @@ import SwiftUI
 struct MainView: View {
     @StateObject private var deviceViewModel = DeviceViewModel()
     @StateObject private var recordingViewModel = MockRecordingViewModel()
-    @StateObject private var audioViewModel = MockAudioViewModel()
 
     @State private var showControls: Bool = true
     @State private var showSettings: Bool = false
@@ -49,7 +48,7 @@ struct MainView: View {
             if showControls {
                 ControlsOverlay(
                     recordingViewModel: recordingViewModel,
-                    audioViewModel: audioViewModel,
+                    deviceViewModel: deviceViewModel,
                     showSettings: $showSettings
                 )
                 .transition(.opacity)

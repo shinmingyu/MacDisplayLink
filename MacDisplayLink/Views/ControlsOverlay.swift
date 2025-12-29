@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ControlsOverlay: View {
     @ObservedObject var recordingViewModel: MockRecordingViewModel
-    @ObservedObject var audioViewModel: MockAudioViewModel
+    @ObservedObject var deviceViewModel: DeviceViewModel
     @Binding var showSettings: Bool
 
     var body: some View {
@@ -41,7 +41,7 @@ struct ControlsOverlay: View {
                 // 하단: 오디오 레벨 + 녹화 버튼 + 녹화 시간
                 HStack(spacing: 32) {
                     // 왼쪽: 오디오 레벨
-                    AudioLevelView(viewModel: audioViewModel)
+                    AudioLevelView(viewModel: deviceViewModel)
 
                     Spacer()
 
@@ -66,7 +66,7 @@ struct ControlsOverlay: View {
 #Preview {
     ControlsOverlay(
         recordingViewModel: MockRecordingViewModel(),
-        audioViewModel: MockAudioViewModel(),
+        deviceViewModel: DeviceViewModel(),
         showSettings: .constant(false)
     )
     .frame(width: 1280, height: 720)

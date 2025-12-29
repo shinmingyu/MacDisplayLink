@@ -18,6 +18,8 @@ class DeviceViewModel: ObservableObject {
     @Published var isDeviceConnected: Bool = false
     @Published var captureDevices: [AVCaptureDevice] = []
     @Published var selectedDevice: AVCaptureDevice?
+    @Published var audioLevel: Float = 0.0
+    @Published var isMuted: Bool = false
 
     private let deviceManager: DeviceManager
     private let captureSessionManager: CaptureSessionManager
@@ -69,6 +71,20 @@ class DeviceViewModel: ObservableObject {
                 self?.signalInfo = signalInfo
             }
             .store(in: &cancellables)
+
+        // CaptureSessionManager의 오디오 레벨 변경 감지
+        captureSessionManager.$audioLevel
+            .sink { [weak self] level in
+                self?.audioLevel = level
+            }
+            .store(in: &cancellables)
+
+        // CaptureSessionManager의 음소거 상태 변경 감지
+        captureSessionManager.$isMuted
+            .sink { [weak self] isMuted in
+                self?.isMuted = isMuted
+            }
+            .store(in: &cancellables)
     }
 
     /// 캡쳐 세션 구성
@@ -90,5 +106,10 @@ class DeviceViewModel: ObservableObject {
     /// 디바이스 선택
     func selectDevice(_ device: AVCaptureDevice) {
         deviceManager.selectDevice(device)
+    }
+
+    /// 음소거 토글
+    func toggleMute() {
+        captureSessionManager.isMuted.toggle()
     }
 }

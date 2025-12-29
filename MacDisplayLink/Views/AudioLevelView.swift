@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AudioLevelView: View {
-    @ObservedObject var viewModel: MockAudioViewModel
+    @ObservedObject var viewModel: DeviceViewModel
 
     var body: some View {
         HStack(spacing: 8) {
@@ -61,8 +61,8 @@ struct AudioLevelView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        AudioLevelView(viewModel: MockAudioViewModel())
-        Text("Audio level animates automatically")
+        AudioLevelView(viewModel: DeviceViewModel())
+        Text("Audio level from real capture device")
             .foregroundStyle(.secondary)
     }
     .padding()
