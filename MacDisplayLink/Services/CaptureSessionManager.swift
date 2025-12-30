@@ -32,8 +32,10 @@ class CaptureSessionManager: NSObject, ObservableObject {
     private var currentDevice: AVCaptureDevice?
     private var audioLevelLogCount = 0
     private var smoothedAudioLevel: Float = 0.0
+    private weak var recordingManager: RecordingManager?
 
-    override init() {
+    init(recordingManager: RecordingManager? = nil) {
+        self.recordingManager = recordingManager
         super.init()
         setupVideoOutput()
         setupAudioOutput()
@@ -352,6 +354,9 @@ extension CaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelegate, A
             updateSignalInfo()
         }
 
+        // RecordingManager에 샘플 버퍼 전달 (녹화 중이면)
+        recordingManager?.appendVideoSampleBuffer(sampleBuffer)
+
         // CVPixelBuffer 추출
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
@@ -391,6 +396,9 @@ extension CaptureSessionManager: AVCaptureVideoDataOutputSampleBufferDelegate, A
             }
             return
         }
+
+        // RecordingManager에 샘플 버퍼 전달 (녹화 중이면)
+        recordingManager?.appendAudioSampleBuffer(sampleBuffer)
 
         // 오디오 레벨 계산 (원본)
         let rawLevel = calculateAudioLevel(from: sampleBuffer)

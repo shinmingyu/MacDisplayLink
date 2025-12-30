@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RecordButton: View {
-    @ObservedObject var viewModel: MockRecordingViewModel
+    @ObservedObject var viewModel: RecordingViewModel
 
     @State private var isPulsing = false
 
@@ -47,7 +47,7 @@ struct RecordButton: View {
 
 #Preview {
     VStack(spacing: 20) {
-        RecordButton(viewModel: MockRecordingViewModel())
+        RecordButton(viewModel: RecordingViewModel())
         Text("Click to toggle recording")
             .foregroundStyle(.secondary)
     }

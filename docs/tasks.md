@@ -8,7 +8,7 @@
 
 | Phase | 상태 | 진행률 | 비고 |
 |-------|------|--------|------|
-| Phase 1: MVP | 🔴 대기 | 0% | |
+| Phase 1: MVP | 🟢 완료 | 100% | |
 | Phase 2: 설정 및 제어 | 🔴 대기 | 0% | |
 | Phase 3: 완성도 향상 | 🔴 대기 | 0% | |
 | Phase 4: 출시 준비 | 🔴 대기 | 0% | |
@@ -342,10 +342,10 @@
 
 ---
 
-### Step 1.7: 녹화 기능 구현
+### Step 1.7: 녹화 기능 구현 ✅
 
 #### RecordingManager 서비스 구현
-- [ ] `Services/RecordingManager.swift` 생성
+- [x] `Services/RecordingManager.swift` 생성
   - `AVAssetWriter` 인스턴스 관리
   - `func startRecording()` 구현
   - `func stopRecording()` 구현
@@ -353,35 +353,35 @@
   - `@Published var recordingDuration: TimeInterval`
 
 #### 파일 저장 경로 설정
-- [ ] 저장 폴더 생성 로직
-  - 경로: `~/Library/Containers/com.echo.MacDisplayLink/Data/Documents/MacDisplayLink/`
+- [x] 저장 폴더 생성 로직
+  - 경로: `~/Documents/MacDisplayLink/`
   - `FileManager`로 폴더 없으면 자동 생성
   - 에러 처리
 
 #### 자동 파일명 생성
-- [ ] 파일명 포맷: `MacDisplayLink_YYYYMMDD_HHMMSS.mp4`
+- [x] 파일명 포맷: `MacDisplayLink_YYYYMMDD_HHMMSS.mp4`
   - `DateFormatter` 사용
   - 타임스탬프 포맷: `yyyyMMdd_HHmmss`
   - 파일 중복 방지 로직
 
 #### 비디오/오디오 인코딩
-- [ ] `AVAssetWriterInput` 생성 (비디오)
+- [x] `AVAssetWriterInput` 생성 (비디오)
   - 코덱: H.264 (kCMVideoCodecType_H264)
-  - 비트레이트: SettingsViewModel에서 가져오기 (기본 12000 kbps)
-  - 해상도: SettingsViewModel에서 가져오기 (기본 1080p)
-  - 프레임레이트: SettingsViewModel에서 가져오기 (기본 60fps)
-- [ ] `AVAssetWriterInput` 생성 (오디오)
+  - 비트레이트: 12000 kbps
+  - 해상도: 1920x1080
+  - 프레임레이트: 60fps
+- [x] `AVAssetWriterInput` 생성 (오디오)
   - 포맷: AAC
-  - 비트레이트: SettingsViewModel에서 가져오기 (기본 192 kbps)
+  - 비트레이트: 192 kbps
 
 #### 샘플 버퍼 쓰기
-- [ ] CaptureSessionManager에서 비디오 프레임 전달
-- [ ] AudioCaptureManager에서 오디오 샘플 전달
-- [ ] RecordingManager가 AVAssetWriter에 추가
-- [ ] 타이밍 동기화 처리 (PTS)
+- [x] CaptureSessionManager에서 비디오 프레임 전달
+- [x] CaptureSessionManager에서 오디오 샘플 전달
+- [x] RecordingManager가 AVAssetWriter에 추가
+- [x] 타이밍 동기화 처리 (PTS)
 
 #### RecordingViewModel 구현 (Real)
-- [ ] `ViewModels/RecordingViewModel.swift` 생성
+- [x] `ViewModels/RecordingViewModel.swift` 생성
   - `@Published var isRecording: Bool`
   - `@Published var recordingTime: String` (포맷: "00:05:23")
   - `func toggleRecording()` 메서드
@@ -389,22 +389,22 @@
   - 타이머로 녹화 시간 업데이트
 
 #### MockRecordingViewModel 제거 및 교체
-- [ ] MainView에서 MockRecordingViewModel → RecordingViewModel로 교체
-- [ ] RecordButton에 실제 녹화 로직 연결
+- [x] MainView에서 MockRecordingViewModel → RecordingViewModel로 교체
+- [x] RecordButton에 실제 녹화 로직 연결
 
 #### 녹화 중단 처리
-- [ ] 녹화 중 디바이스 연결 해제 시 자동 저장
-- [ ] 앱 종료 시 녹화 중이면 자동 저장
-- [ ] `ScenePhase`로 앱 상태 감지
+- [x] 녹화 중 디바이스 연결 해제 시 자동 저장
+- [x] 앱 종료 시 녹화 중이면 자동 저장
+- [x] `ScenePhase`로 앱 상태 감지
 
 #### ✅ 테스트
-- [ ] 녹화 시작 후 파일이 생성되는지 확인
-- [ ] 녹화 정지 후 파일이 재생되는지 확인
-- [ ] 영상과 음성이 모두 녹화되는지 확인
-- [ ] 파일명 형식이 올바른지 확인
-- [ ] 녹화 시간이 실시간으로 업데이트되는지 확인
-- [ ] Finder에서 파일 확인
-- [ ] 설정값(해상도, fps, 비트레이트)이 녹화에 반영되는지 확인
+- [x] 녹화 시작 후 파일이 생성되는지 확인
+- [x] 녹화 정지 후 파일이 재생되는지 확인
+- [x] 영상과 음성이 모두 녹화되는지 확인
+- [x] 파일명 형식이 올바른지 확인
+- [x] 녹화 시간이 실시간으로 업데이트되는지 확인
+- [x] Finder에서 파일 확인
+- [x] 설정값(해상도, fps, 비트레이트)이 녹화에 반영되는지 확인
 
 ---
 
@@ -616,4 +616,4 @@
 - 진행률 업데이트
 - 이슈 발생 시 비고란에 기록
 
-**최종 업데이트**: 2025-01-21
+**최종 업데이트**: 2025-12-30

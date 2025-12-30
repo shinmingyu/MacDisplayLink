@@ -25,9 +25,9 @@ class DeviceViewModel: ObservableObject {
     private let captureSessionManager: CaptureSessionManager
     private var cancellables = Set<AnyCancellable>()
 
-    init(deviceManager: DeviceManager = DeviceManager(), captureSessionManager: CaptureSessionManager = CaptureSessionManager()) {
+    init(deviceManager: DeviceManager = DeviceManager(), recordingManager: RecordingManager? = nil) {
         self.deviceManager = deviceManager
-        self.captureSessionManager = captureSessionManager
+        self.captureSessionManager = CaptureSessionManager(recordingManager: recordingManager)
 
         // 디바이스 목록 변경 감지
         deviceManager.$captureDevices

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ControlsOverlay: View {
-    @ObservedObject var recordingViewModel: MockRecordingViewModel
+    @ObservedObject var recordingViewModel: RecordingViewModel
     @ObservedObject var deviceViewModel: DeviceViewModel
     @Binding var showSettings: Bool
 
@@ -65,7 +65,7 @@ struct ControlsOverlay: View {
 
 #Preview {
     ControlsOverlay(
-        recordingViewModel: MockRecordingViewModel(),
+        recordingViewModel: RecordingViewModel(),
         deviceViewModel: DeviceViewModel(),
         showSettings: .constant(false)
     )

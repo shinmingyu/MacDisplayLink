@@ -8,11 +8,17 @@
 import SwiftUI
 
 struct MainView: View {
-    @StateObject private var deviceViewModel = DeviceViewModel()
-    @StateObject private var recordingViewModel = MockRecordingViewModel()
+    @StateObject private var recordingViewModel = RecordingViewModel()
+    @StateObject private var deviceViewModel: DeviceViewModel
 
     @State private var showControls: Bool = true
     @State private var showSettings: Bool = false
+
+    init() {
+        let recordingVM = RecordingViewModel()
+        _recordingViewModel = StateObject(wrappedValue: recordingVM)
+        _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(recordingManager: recordingVM.getRecordingManager()))
+    }
 
     var body: some View {
         ZStack {
