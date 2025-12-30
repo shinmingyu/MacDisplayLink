@@ -19,7 +19,7 @@ struct SettingsView: View {
                     Label("디바이스", systemImage: "video.badge.checkmark")
                 }
 
-            VideoSettingsTab(viewModel: settingsViewModel)
+            VideoSettingsTab(viewModel: settingsViewModel, deviceViewModel: deviceViewModel)
                 .tabItem {
                     Label("영상", systemImage: "video.fill")
                 }

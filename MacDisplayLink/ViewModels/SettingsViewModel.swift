@@ -9,8 +9,11 @@ import SwiftUI
 import Combine
 
 class SettingsViewModel: ObservableObject {
-    @Published var inputResolution: String = "1080p"
-    @Published var recordingResolution: String = "1080p"
+    // 입력 포맷 (캡처 디바이스에서 선택)
+    @Published var selectedInputFormatId: String? = nil // nil = "자동" (디바이스 기본값)
+
+    // 녹화 설정
+    @Published var recordingResolution: String = "입력과 동일"
     @Published var frameRate: Int = 60
     @Published var videoBitrate: Int = 12000
     @Published var audioBitrate: Int = 192
@@ -22,15 +25,15 @@ class SettingsViewModel: ObservableObject {
     }
 
     func loadSettings() {
-        inputResolution = defaults.string(forKey: "inputResolution") ?? "1080p"
-        recordingResolution = defaults.string(forKey: "recordingResolution") ?? "1080p"
+        selectedInputFormatId = defaults.string(forKey: "selectedInputFormatId")
+        recordingResolution = defaults.string(forKey: "recordingResolution") ?? "입력과 동일"
         frameRate = defaults.integer(forKey: "frameRate") != 0 ? defaults.integer(forKey: "frameRate") : 60
         videoBitrate = defaults.integer(forKey: "videoBitrate") != 0 ? defaults.integer(forKey: "videoBitrate") : 12000
         audioBitrate = defaults.integer(forKey: "audioBitrate") != 0 ? defaults.integer(forKey: "audioBitrate") : 192
     }
 
     func saveSettings() {
-        defaults.set(inputResolution, forKey: "inputResolution")
+        defaults.set(selectedInputFormatId, forKey: "selectedInputFormatId")
         defaults.set(recordingResolution, forKey: "recordingResolution")
         defaults.set(frameRate, forKey: "frameRate")
         defaults.set(videoBitrate, forKey: "videoBitrate")
@@ -40,10 +43,15 @@ class SettingsViewModel: ObservableObject {
     // MARK: - Helper Methods
 
     /// 녹화 해상도를 width, height로 변환
-    func getRecordingResolution() -> (width: Int, height: Int) {
-        let resolution = recordingResolution == "입력과 동일" ? inputResolution : recordingResolution
+    /// - Parameter inputFormat: 현재 선택된 입력 포맷 (recordingResolution이 "입력과 동일"일 때 사용)
+    func getRecordingResolution(inputFormat: VideoFormat? = nil) -> (width: Int, height: Int) {
+        // "입력과 동일"이면 입력 포맷의 해상도 사용
+        if recordingResolution == "입력과 동일", let format = inputFormat {
+            return (format.width, format.height)
+        }
 
-        switch resolution {
+        // 고정 해상도 사용
+        switch recordingResolution {
         case "720p":
             return (1280, 720)
         case "1080p":
@@ -53,7 +61,8 @@ class SettingsViewModel: ObservableObject {
         case "4K":
             return (3840, 2160)
         default:
-            return (1920, 1080) // 기본값
+            // "입력과 동일"인데 inputFormat이 없으면 기본값
+            return (1920, 1080)
         }
     }
 

@@ -13,6 +13,7 @@ import Combine
 class DeviceManager: ObservableObject {
     @Published var captureDevices: [AVCaptureDevice] = []
     @Published var selectedDevice: AVCaptureDevice?
+    @Published var availableFormats: [VideoFormat] = []
 
     private var observers: [NSObjectProtocol] = []
 
@@ -81,6 +82,28 @@ class DeviceManager: ObservableObject {
                 print("⚠️ 선택된 디바이스가 연결 해제됨: \(selected.localizedName)")
                 self.selectedDevice = nil
             }
+
+            // 선택된 디바이스의 포맷 목록 업데이트
+            self.updateAvailableFormats()
+        }
+    }
+
+    /// 선택된 디바이스의 지원 포맷 목록 업데이트
+    private func updateAvailableFormats() {
+        guard let device = selectedDevice else {
+            availableFormats = []
+            return
+        }
+
+        let formats = device.formats.map { VideoFormat(format: $0) }.uniqueAndSorted()
+        availableFormats = formats
+
+        print("📐 [DeviceManager] 지원 포맷 수: \(formats.count)")
+        for (index, format) in formats.prefix(5).enumerated() {
+            print("  \(index + 1). \(format.displayName)")
+        }
+        if formats.count > 5 {
+            print("  ... 외 \(formats.count - 5)개")
         }
     }
 
@@ -113,6 +136,9 @@ class DeviceManager: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             self?.selectedDevice = device
             print("✅ 디바이스 선택됨: \(device.localizedName)")
+
+            // 포맷 목록 업데이트
+            self?.updateAvailableFormats()
         }
     }
 }

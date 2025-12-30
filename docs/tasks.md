@@ -414,6 +414,92 @@
 
 ---
 
+### Step 2.1: 영상 설정 탭 - RecordingManager 연동 ✅
+
+#### MockSettingsViewModel → SettingsViewModel
+- [x] 파일명 및 클래스명 변경
+- [x] 모든 참조 업데이트 (VideoSettingsTab, AudioSettingsTab, SettingsView)
+
+#### SettingsViewModel 헬퍼 메서드
+- [x] getRecordingResolution(): 해상도 문자열 → (width, height) 변환
+- [x] getVideoBitrate(): kbps → bps 변환
+- [x] getAudioBitrate(): kbps → bps 변환
+
+#### RecordingManager 비디오 설정 연동
+- [x] SettingsViewModel을 weak reference로 주입
+- [x] setupVideoInput()에서 SettingsViewModel 값 사용
+  - 녹화 해상도 (recordingResolution)
+  - 프레임레이트 (frameRate)
+  - 비디오 비트레이트 (videoBitrate)
+
+#### MainView 의존성 주입
+- [x] SettingsViewModel → RecordingViewModel → RecordingManager 체인 구성
+
+#### ✅ 테스트
+- [x] 설정 화면에서 해상도, 프레임레이트, 비트레이트 변경 확인
+- [x] 녹화된 파일이 설정한 값으로 저장되는지 확인
+- [x] 콘솔 로그에서 설정값 적용 확인
+
+---
+
+### Step 2.1.5: 입력 해상도 동적 설정 (캡처 디바이스 포맷 선택) ✅
+
+#### DeviceManager에 포맷 관리 기능 추가
+- [x] 선택된 디바이스의 지원 포맷 목록 가져오기
+  - `device.formats` 속성 활용
+  - 각 포맷의 해상도(width, height) 파싱
+  - 각 포맷의 프레임레이트(fps) 파싱
+- [x] 포맷 정보를 구조체로 정리
+  - `struct VideoFormat: Identifiable, Hashable`
+  - `id`, `width`, `height`, `frameRate`, `format` (AVCaptureDevice.Format)
+  - `displayName`: "1920×1080 @ 60fps" 형식
+  - `uniqueAndSorted()`: 중복 제거 및 정렬 기능
+
+#### SettingsViewModel 수정
+- [x] 입력 해상도 관련 프로퍼티 변경
+  - `@Published var inputResolution: String` 삭제
+  - `@Published var selectedInputFormatId: String?` 추가 (nil = "자동")
+  - `recordingResolution` 기본값을 "입력과 동일"로 변경
+- [x] `getRecordingResolution()` 메서드 수정
+  - `inputFormat` 파라미터 추가
+  - "입력과 동일" 선택 시 입력 포맷의 해상도 사용
+
+#### VideoSettingsTab UI 수정
+- [x] "입력 포맷" Picker를 동적으로 변경
+  - 하드코딩된 옵션 제거
+  - `deviceViewModel.availableFormats`를 사용하여 동적 생성
+  - 표시 형식: "1920×1080 @ 60fps"
+  - "자동 (디바이스 기본값)" 옵션 추가
+- [x] 디바이스 미연결 시 처리
+  - 포맷 목록이 비어있으면 Picker 비활성화
+  - "캡처 디바이스를 연결하세요" 안내 메시지 표시
+- [x] 포맷 변경 시 자동 적용
+  - `onChange`에서 `deviceViewModel.applyInputFormat()` 호출
+
+#### CaptureSessionManager 수정
+- [x] 선택한 포맷을 캡처 세션에 적용
+  - `device.activeFormat` 설정
+  - 정확한 CMTime 값 사용 (videoSupportedFrameRateRanges에서 가져옴)
+  - `device.activeVideoMinFrameDuration` 설정
+  - `device.activeVideoMaxFrameDuration` 설정
+- [x] 포맷 적용 시 에러 처리
+  - `device.lockForConfiguration()` 사용
+  - `device.unlockForConfiguration()` 사용
+  - 프레임레이트 범위 찾기 실패 시 기본값 사용
+
+#### DeviceViewModel 연동
+- [x] `availableFormats` 프로퍼티 추가 및 DeviceManager와 연동
+- [x] `applyInputFormat()` 메서드 추가
+- [x] CaptureSessionManager에 포맷 적용 요청 전달
+
+#### ✅ 테스트
+- [x] 캡처 디바이스 연결 시 지원 포맷 목록이 표시되는지 확인
+- [x] 다른 포맷 선택 시 프리뷰 화면의 signalInfo가 변경되는지 확인
+- [x] 앱이 멈추지 않고 정상 작동하는지 확인 (CMTime 정확도 이슈 해결)
+- [x] 디바이스 미연결 시 UI가 적절히 처리되는지 확인
+
+---
+
 ### 설정 Sheet UI
 
 #### SettingsView 생성

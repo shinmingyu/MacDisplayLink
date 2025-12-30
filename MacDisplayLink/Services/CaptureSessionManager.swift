@@ -162,6 +162,54 @@ class CaptureSessionManager: NSObject, ObservableObject {
         return externalAudioDevice
     }
 
+    /// 비디오 포맷 적용
+    func applyVideoFormat(_ format: VideoFormat?) {
+        videoQueue.async { [weak self] in
+            guard let self = self,
+                  let device = self.currentDevice else {
+                print("⚠️ [CaptureSession] 디바이스가 없습니다")
+                return
+            }
+
+            // "자동" 모드면 포맷 변경 안함 (디바이스 기본값 사용)
+            guard let format = format else {
+                print("✅ [CaptureSession] 자동 모드 - 디바이스 기본 포맷 사용")
+                self.updateSignalInfo()
+                return
+            }
+
+            do {
+                try device.lockForConfiguration()
+
+                // activeFormat 설정
+                device.activeFormat = format.format
+
+                // 프레임레이트 설정 - 정확한 CMTime 값 사용
+                // format.format.videoSupportedFrameRateRanges에서 원하는 프레임레이트에 맞는 범위 찾기
+                if let frameRateRange = format.format.videoSupportedFrameRateRanges.first(where: { range in
+                    abs(range.maxFrameRate - format.frameRate) < 0.01
+                }) {
+                    // 정확한 minFrameDuration과 maxFrameDuration 사용
+                    device.activeVideoMinFrameDuration = frameRateRange.minFrameDuration
+                    device.activeVideoMaxFrameDuration = frameRateRange.maxFrameDuration
+                    print("✅ [CaptureSession] 프레임레이트 설정: \(frameRateRange.maxFrameRate)fps (min: \(frameRateRange.minFrameDuration), max: \(frameRateRange.maxFrameDuration))")
+                } else {
+                    print("⚠️ [CaptureSession] 프레임레이트 범위를 찾을 수 없음, 디바이스 기본값 사용")
+                }
+
+                device.unlockForConfiguration()
+
+                print("✅ [CaptureSession] 포맷 적용 완료: \(format.displayName)")
+
+                // 신호 정보 업데이트
+                self.updateSignalInfo()
+
+            } catch {
+                print("❌ [CaptureSession] 포맷 적용 실패: \(error.localizedDescription)")
+            }
+        }
+    }
+
     /// 세션 중지
     func stopSession() {
         videoQueue.async { [weak self] in

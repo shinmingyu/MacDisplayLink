@@ -20,6 +20,7 @@ class DeviceViewModel: ObservableObject {
     @Published var selectedDevice: AVCaptureDevice?
     @Published var audioLevel: Float = 0.0
     @Published var isMuted: Bool = false
+    @Published var availableFormats: [VideoFormat] = []
 
     private let deviceManager: DeviceManager
     private let captureSessionManager: CaptureSessionManager
@@ -42,6 +43,13 @@ class DeviceViewModel: ObservableObject {
             .sink { [weak self] device in
                 self?.selectedDevice = device
                 self?.configureCaptureSession(for: device)
+            }
+            .store(in: &cancellables)
+
+        // 사용 가능한 포맷 목록 변경 감지
+        deviceManager.$availableFormats
+            .sink { [weak self] formats in
+                self?.availableFormats = formats
             }
             .store(in: &cancellables)
 
@@ -111,5 +119,11 @@ class DeviceViewModel: ObservableObject {
     /// 음소거 토글
     func toggleMute() {
         captureSessionManager.isMuted.toggle()
+    }
+
+    /// 입력 포맷 적용
+    func applyInputFormat(_ formatId: String?) {
+        let format = availableFormats.first { $0.id == formatId }
+        captureSessionManager.applyVideoFormat(format)
     }
 }

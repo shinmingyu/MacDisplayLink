@@ -9,27 +9,40 @@ import SwiftUI
 
 struct VideoSettingsTab: View {
     @ObservedObject var viewModel: SettingsViewModel
+    @ObservedObject var deviceViewModel: DeviceViewModel
 
-    let resolutionOptions = ["자동", "720p", "1080p", "1440p", "4K"]
+    let recordingResolutionOptions = ["720p", "1080p", "1440p", "4K"]
     let frameRateOptions = [30, 60, 120]
 
     var body: some View {
         Form {
             Section("입력 설정") {
-                Picker("입력 해상도", selection: $viewModel.inputResolution) {
-                    ForEach(resolutionOptions, id: \.self) { resolution in
-                        Text(resolution).tag(resolution)
+                Picker("입력 포맷", selection: $viewModel.selectedInputFormatId) {
+                    // "자동" 옵션
+                    Text("자동 (디바이스 기본값)").tag(nil as String?)
+
+                    // 사용 가능한 포맷 목록
+                    ForEach(deviceViewModel.availableFormats, id: \.id) { format in
+                        Text(format.displayName).tag(format.id as String?)
                     }
                 }
-                .onChange(of: viewModel.inputResolution) { _, _ in
+                .onChange(of: viewModel.selectedInputFormatId) { _, newValue in
                     viewModel.saveSettings()
+                    deviceViewModel.applyInputFormat(newValue)
+                }
+                .disabled(deviceViewModel.availableFormats.isEmpty)
+
+                if deviceViewModel.availableFormats.isEmpty {
+                    Text("캡처 디바이스를 연결하세요")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
                 }
             }
 
             Section("녹화 설정") {
                 Picker("녹화 해상도", selection: $viewModel.recordingResolution) {
                     Text("입력과 동일").tag("입력과 동일")
-                    ForEach(resolutionOptions.dropFirst(), id: \.self) { resolution in
+                    ForEach(recordingResolutionOptions, id: \.self) { resolution in
                         Text(resolution).tag(resolution)
                     }
                 }
@@ -69,6 +82,6 @@ struct VideoSettingsTab: View {
 }
 
 #Preview {
-    VideoSettingsTab(viewModel: SettingsViewModel())
+    VideoSettingsTab(viewModel: SettingsViewModel(), deviceViewModel: DeviceViewModel())
         .frame(width: 500, height: 400)
 }
