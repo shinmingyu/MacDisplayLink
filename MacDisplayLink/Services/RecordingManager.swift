@@ -23,18 +23,16 @@ class RecordingManager: NSObject, ObservableObject {
     private var recordingTimer: Timer?
     private var currentOutputURL: URL?
 
-    // 비디오 설정 (기본값)
-    private let defaultVideoWidth: Int = 1920
-    private let defaultVideoHeight: Int = 1080
-    private let defaultFrameRate: Int = 60
-    private let defaultVideoBitrate: Int = 12_000_000 // 12 Mbps
+    // SettingsViewModel 참조
+    private weak var settingsViewModel: SettingsViewModel?
 
-    // 오디오 설정 (기본값)
+    // 오디오 설정 (기본값) - Step 2.2에서 SettingsViewModel로 변경 예정
     private let defaultAudioBitrate: Int = 192_000 // 192 kbps
     private let defaultSampleRate: Double = 48000.0
     private let defaultChannels: Int = 2
 
-    override init() {
+    init(settingsViewModel: SettingsViewModel? = nil) {
+        self.settingsViewModel = settingsViewModel
         super.init()
     }
 
@@ -98,13 +96,18 @@ class RecordingManager: NSObject, ObservableObject {
 
     /// 비디오 입력 설정
     private func setupVideoInput() {
+        // SettingsViewModel에서 설정값 가져오기 (없으면 기본값)
+        let resolution = settingsViewModel?.getRecordingResolution() ?? (width: 1920, height: 1080)
+        let frameRate = settingsViewModel?.frameRate ?? 60
+        let videoBitrate = settingsViewModel?.getVideoBitrate() ?? 12_000_000
+
         let videoSettings: [String: Any] = [
             AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: defaultVideoWidth,
-            AVVideoHeightKey: defaultVideoHeight,
+            AVVideoWidthKey: resolution.width,
+            AVVideoHeightKey: resolution.height,
             AVVideoCompressionPropertiesKey: [
-                AVVideoAverageBitRateKey: defaultVideoBitrate,
-                AVVideoExpectedSourceFrameRateKey: defaultFrameRate,
+                AVVideoAverageBitRateKey: videoBitrate,
+                AVVideoExpectedSourceFrameRateKey: frameRate,
                 AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel
             ]
         ]
@@ -114,7 +117,7 @@ class RecordingManager: NSObject, ObservableObject {
 
         if let videoInput = videoInput, assetWriter?.canAdd(videoInput) == true {
             assetWriter?.add(videoInput)
-            print("✅ [RecordingManager] 비디오 입력 추가 완료")
+            print("✅ [RecordingManager] 비디오 입력 추가 완료 - \(resolution.width)x\(resolution.height) @ \(frameRate)fps, \(videoBitrate/1000)kbps")
         }
     }
 

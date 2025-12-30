@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var viewModel = MockSettingsViewModel()
+    @ObservedObject var settingsViewModel: SettingsViewModel
     @ObservedObject var deviceViewModel: DeviceViewModel
     @Environment(\.dismiss) private var dismiss
 
@@ -19,12 +19,12 @@ struct SettingsView: View {
                     Label("디바이스", systemImage: "video.badge.checkmark")
                 }
 
-            VideoSettingsTab(viewModel: viewModel)
+            VideoSettingsTab(viewModel: settingsViewModel)
                 .tabItem {
                     Label("영상", systemImage: "video.fill")
                 }
 
-            AudioSettingsTab(viewModel: viewModel)
+            AudioSettingsTab(viewModel: settingsViewModel)
                 .tabItem {
                     Label("오디오", systemImage: "speaker.wave.2.fill")
                 }
@@ -46,5 +46,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(deviceViewModel: DeviceViewModel())
+    SettingsView(settingsViewModel: SettingsViewModel(), deviceViewModel: DeviceViewModel())
 }

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AudioSettingsTab: View {
-    @ObservedObject var viewModel: MockSettingsViewModel
+    @ObservedObject var viewModel: SettingsViewModel
 
     let audioBitrateOptions = [128, 192, 256, 320]
 
@@ -39,6 +39,6 @@ struct AudioSettingsTab: View {
 }
 
 #Preview {
-    AudioSettingsTab(viewModel: MockSettingsViewModel())
+    AudioSettingsTab(viewModel: SettingsViewModel())
         .frame(width: 500, height: 400)
 }

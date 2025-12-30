@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct MainView: View {
+    @StateObject private var settingsViewModel = SettingsViewModel()
     @StateObject private var recordingViewModel = RecordingViewModel()
     @StateObject private var deviceViewModel: DeviceViewModel
 
@@ -15,7 +16,10 @@ struct MainView: View {
     @State private var showSettings: Bool = false
 
     init() {
-        let recordingVM = RecordingViewModel()
+        let settingsVM = SettingsViewModel()
+        let recordingVM = RecordingViewModel(settingsViewModel: settingsVM)
+
+        _settingsViewModel = StateObject(wrappedValue: settingsVM)
         _recordingViewModel = StateObject(wrappedValue: recordingVM)
         _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(recordingManager: recordingVM.getRecordingManager()))
     }
@@ -62,7 +66,7 @@ struct MainView: View {
         }
         .frame(minWidth: 1280, minHeight: 720)
         .sheet(isPresented: $showSettings) {
-            SettingsView(deviceViewModel: deviceViewModel)
+            SettingsView(settingsViewModel: settingsViewModel, deviceViewModel: deviceViewModel)
         }
     }
 }

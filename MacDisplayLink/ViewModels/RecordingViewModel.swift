@@ -18,8 +18,8 @@ class RecordingViewModel: ObservableObject {
     private let recordingManager: RecordingManager
     private var cancellables = Set<AnyCancellable>()
 
-    init(recordingManager: RecordingManager = RecordingManager()) {
-        self.recordingManager = recordingManager
+    init(settingsViewModel: SettingsViewModel? = nil) {
+        self.recordingManager = RecordingManager(settingsViewModel: settingsViewModel)
 
         // RecordingManager의 녹화 상태 변경 감지
         recordingManager.$isRecording

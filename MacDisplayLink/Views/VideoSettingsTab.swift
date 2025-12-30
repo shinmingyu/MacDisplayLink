@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct VideoSettingsTab: View {
-    @ObservedObject var viewModel: MockSettingsViewModel
+    @ObservedObject var viewModel: SettingsViewModel
 
     let resolutionOptions = ["자동", "720p", "1080p", "1440p", "4K"]
     let frameRateOptions = [30, 60, 120]
@@ -69,6 +69,6 @@ struct VideoSettingsTab: View {
 }
 
 #Preview {
-    VideoSettingsTab(viewModel: MockSettingsViewModel())
+    VideoSettingsTab(viewModel: SettingsViewModel())
         .frame(width: 500, height: 400)
 }
