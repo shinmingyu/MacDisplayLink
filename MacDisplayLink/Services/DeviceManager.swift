@@ -100,7 +100,7 @@ class DeviceManager: ObservableObject {
 
         print("📐 [DeviceManager] 지원 포맷 수: \(formats.count)")
         for (index, format) in formats.prefix(5).enumerated() {
-            print("  \(index + 1). \(format.displayName)")
+            print("  \(index + 1). \(format.displayName) [\(format.pixelFormat)]")
         }
         if formats.count > 5 {
             print("  ... 외 \(formats.count - 5)개")

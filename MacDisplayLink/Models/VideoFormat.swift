@@ -14,6 +14,7 @@ struct VideoFormat: Identifiable, Hashable {
     let width: Int
     let height: Int
     let frameRate: Double
+    let pixelFormat: String  // "420v", "420f", "2vuy" 등
     let format: AVCaptureDevice.Format
 
     /// 표시용 문자열 (예: "1920×1080 @ 60fps")
@@ -50,8 +51,23 @@ struct VideoFormat: Identifiable, Hashable {
         let frameRateRange = format.videoSupportedFrameRateRanges.first
         self.frameRate = frameRateRange?.maxFrameRate ?? 30.0
 
-        // 고유 ID 생성
-        self.id = "\(width)x\(height)@\(Int(frameRate))fps"
+        // 픽셀 포맷 파싱
+        let mediaSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription)
+        self.pixelFormat = VideoFormat.fourCCToString(mediaSubType)
+
+        // 고유 ID 생성 (해상도, 프레임레이트, 픽셀 포맷 포함)
+        self.id = "\(width)x\(height)@\(Int(frameRate))fps_\(pixelFormat)"
+    }
+
+    /// FourCC 코드를 문자열로 변환
+    static func fourCCToString(_ fourCC: FourCharCode) -> String {
+        let chars: [UInt8] = [
+            UInt8((fourCC >> 24) & 0xFF),
+            UInt8((fourCC >> 16) & 0xFF),
+            UInt8((fourCC >> 8) & 0xFF),
+            UInt8(fourCC & 0xFF)
+        ]
+        return String(bytes: chars, encoding: .ascii) ?? "unknown"
     }
 
     // MARK: - 헬퍼 메서드
@@ -65,16 +81,27 @@ struct VideoFormat: Identifiable, Hashable {
 // MARK: - 배열 확장
 
 extension Array where Element == VideoFormat {
-    /// 중복 제거 및 정렬 (해상도 높은 순, 프레임레이트 높은 순)
+    /// 중복 제거 및 정렬 (해상도 높은 순, 프레임레이트 높은 순, 420v 우선)
     func uniqueAndSorted() -> [VideoFormat] {
-        // 중복 제거 (같은 해상도 & 프레임레이트)
-        var seen = Set<String>()
-        var unique: [VideoFormat] = []
+        // 해상도@프레임레이트 조합별로 그룹화
+        var groups: [String: [VideoFormat]] = [:]
 
         for format in self {
-            if !seen.contains(format.id) {
-                seen.insert(format.id)
-                unique.append(format)
+            let key = "\(format.width)x\(format.height)@\(Int(format.frameRate))fps"
+            groups[key, default: []].append(format)
+        }
+
+        // 각 그룹에서 최적의 픽셀 포맷 선택 (420v 우선)
+        var unique: [VideoFormat] = []
+
+        for (_, formats) in groups {
+            // 픽셀 포맷 우선순위: 420v > 420f > 기타
+            let prioritized = formats.sorted { lhs, rhs in
+                return pixelFormatPriority(lhs.pixelFormat) > pixelFormatPriority(rhs.pixelFormat)
+            }
+
+            if let best = prioritized.first {
+                unique.append(best)
             }
         }
 
@@ -85,6 +112,16 @@ extension Array where Element == VideoFormat {
             } else {
                 return lhs.frameRate > rhs.frameRate // 프레임레이트 높은 순
             }
+        }
+    }
+
+    /// 픽셀 포맷 우선순위 (높을수록 선호됨)
+    private func pixelFormatPriority(_ pixelFormat: String) -> Int {
+        switch pixelFormat {
+        case "420v": return 100  // Video Range YUV 4:2:0 (가장 선호)
+        case "420f": return 90   // Full Range YUV 4:2:0
+        case "2vuy": return 80   // UYVY 4:2:2
+        default: return 0        // 기타 포맷
         }
     }
 }

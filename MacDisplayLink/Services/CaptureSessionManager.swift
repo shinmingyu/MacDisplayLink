@@ -199,7 +199,7 @@ class CaptureSessionManager: NSObject, ObservableObject {
 
                 device.unlockForConfiguration()
 
-                print("✅ [CaptureSession] 포맷 적용 완료: \(format.displayName)")
+                print("✅ [CaptureSession] 포맷 적용 완료: \(format.displayName) [\(format.pixelFormat)]")
 
                 // 신호 정보 업데이트
                 self.updateSignalInfo()
@@ -247,7 +247,13 @@ class CaptureSessionManager: NSObject, ObservableObject {
         let dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
         let frameRate = Int(Int64(device.activeVideoMaxFrameDuration.timescale) / device.activeVideoMaxFrameDuration.value)
 
+        // 픽셀 포맷 추출
+        let mediaSubType = CMFormatDescriptionGetMediaSubType(format.formatDescription)
+        let pixelFormat = VideoFormat.fourCCToString(mediaSubType)
+
         let info = "\(dimensions.width)×\(dimensions.height) @ \(frameRate)fps"
+
+        print("📺 [CaptureSession] 현재 신호: \(info) [\(pixelFormat)]")
 
         DispatchQueue.main.async { [weak self] in
             self?.signalInfo = info
