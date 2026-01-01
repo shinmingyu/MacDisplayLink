@@ -9,7 +9,7 @@
 | Phase | 상태 | 진행률 | 비고 |
 |-------|------|--------|------|
 | Phase 1: MVP | 🟢 완료 | 100% | |
-| Phase 2: 설정 및 제어 | 🔴 대기 | 0% | |
+| Phase 2: 설정 및 제어 | 🟢 완료 | 100% | |
 | Phase 3: 완성도 향상 | 🔴 대기 | 0% | |
 | Phase 4: 출시 준비 | 🔴 대기 | 0% | |
 
@@ -500,14 +500,15 @@
 
 ---
 
-### 설정 Sheet UI
+### 설정 Sheet UI ✅
 
 #### SettingsView 생성
-- [ ] `Views/SettingsView.swift` 생성
-  - TabView로 3개 탭 구성
-  - 탭 1: 📹 영상
-  - 탭 2: 🔊 오디오
-  - 탭 3: 💾 저장
+- [x] `Views/SettingsView.swift` 생성 (Step 1.3에서 구현)
+  - TabView로 4개 탭 구성
+  - 탭 1: 디바이스
+  - 탭 2: 📹 영상
+  - 탭 3: 🔊 오디오
+  - 탭 4: 💾 저장
 
 #### 영상 설정 탭
 - [x] 입력 포맷 선택 (Step 2.1.5에서 구현)
@@ -515,6 +516,7 @@
   - 표시 형식: "1920×1080 @ 60fps"
   - 캡처 디바이스의 실제 지원 포맷을 동적으로 표시
   - 디바이스 미연결 시 비활성화 및 안내 메시지
+  - UserDefaults에 저장 및 앱 재시작 시 자동 복원
 - [x] 녹화 해상도 선택 (Step 2.1에서 구현)
   - Picker: 입력과 동일 / 720p / 1080p / 1440p / 4K
   - "입력과 동일" 선택 시 입력 포맷의 해상도 사용
@@ -527,42 +529,55 @@
   - 실시간 값 표시
 
 #### 오디오 설정 탭
-- [ ] 오디오 입력 소스 (읽기 전용)
-  - Text: "캡쳐 카드"
-- [ ] 오디오 비트레이트 선택
-  - Picker: 128 kbps / 192 kbps / 256 kbps
+- [x] 오디오 입력 소스 (읽기 전용)
+  - Text: 연결된 캡쳐 카드 이름 (동적)
+  - DeviceViewModel 연동으로 실제 디바이스 이름 표시
+- [x] 오디오 비트레이트 선택
+  - Picker: 128 kbps / 192 kbps / 256 kbps / 320 kbps
+  - RecordingManager와 연동하여 실제 녹화에 적용
 
 #### 저장 설정 탭
-- [ ] 저장 경로 표시 (읽기 전용)
-  - Text: 현재 저장 경로
-- [ ] "Finder에서 보기" 버튼
-  - `NSWorkspace.shared.selectFile()` 호출
-- [ ] 파일명 형식 표시 (읽기 전용)
-  - Text: "MacDisplayLink_YYYYMMDD_HHMMSS.mp4"
+- [x] 저장 경로 표시 (읽기 전용)
+  - Text: ~/Documents/MacDisplayLink
+  - RecordingManager와 동일한 경로 표시
+- [x] "Finder에서 열기" 버튼
+  - `NSWorkspace.shared.open()` 호출
+  - 폴더 없으면 자동 생성
+- [x] 파일명 형식 표시 (읽기 전용)
+  - Text: "MacDisplayLink_yyyyMMdd_HHmmss.mp4"
+  - RecordingManager와 동일한 파일명 형식 표시
 
 #### SettingsViewModel 구현
-- [ ] `ViewModels/SettingsViewModel.swift` 생성
-  - `@Published var inputResolution: Resolution`
-  - `@Published var recordingResolution: Resolution`
-  - `@Published var frameRate: FrameRate`
+- [x] `ViewModels/SettingsViewModel.swift` 생성 (Step 1.3/2.1에서 구현)
+  - `@Published var selectedInputFormatId: String?` (nil = "자동")
+  - `@Published var recordingResolution: String`
+  - `@Published var frameRate: Int`
   - `@Published var videoBitrate: Int`
   - `@Published var audioBitrate: Int`
   - UserDefaults 저장/불러오기 로직
+  - 헬퍼 메서드 (getRecordingResolution, getVideoBitrate, getAudioBitrate)
 
 #### UserDefaults 저장
-- [ ] 설정값을 UserDefaults에 저장
-  - 키: "inputResolution", "recordingResolution", etc.
-- [ ] 앱 시작 시 UserDefaults에서 불러오기
+- [x] 설정값을 UserDefaults에 저장
+  - 키: "selectedInputFormatId", "recordingResolution", "frameRate", "videoBitrate", "audioBitrate"
+  - `.onChange()` 사용하여 즉시 저장
+- [x] 앱 시작 시 UserDefaults에서 불러오기
+  - `init()`에서 `loadSettings()` 호출
+  - DeviceViewModel에서 입력 포맷 자동 복원
 
 #### 설정 버튼 연결
-- [ ] MainView에서 설정 버튼 클릭 시 Sheet 표시
+- [x] MainView에서 설정 버튼 클릭 시 Sheet 표시 (Step 1.3에서 구현)
+  - `@State var showSettings: Bool = false`
   - `.sheet(isPresented: $showSettings)`
+  - SettingsViewModel과 DeviceViewModel 전달
 
 #### ✅ 테스트
-- [ ] 설정 Sheet가 정상적으로 표시되는지 확인
-- [ ] 각 설정값 변경 시 즉시 반영되는지 확인
-- [ ] 앱 재시작 후 설정값이 유지되는지 확인
-- [ ] "Finder에서 보기" 버튼 클릭 시 폴더가 열리는지 확인
+- [x] 설정 Sheet가 정상적으로 표시되는지 확인
+- [x] 각 설정값 변경 시 즉시 반영되는지 확인
+- [x] 앱 재시작 후 설정값이 유지되는지 확인 (특히 입력 포맷)
+- [x] "Finder에서 열기" 버튼 클릭 시 올바른 폴더가 열리는지 확인
+- [x] 오디오 비트레이트가 녹화 시 적용되는지 확인
+- [x] 실제 디바이스 이름이 오디오 탭에 표시되는지 확인
 
 ---
 

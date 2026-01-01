@@ -123,11 +123,14 @@ class RecordingManager: NSObject, ObservableObject {
 
     /// 오디오 입력 설정
     private func setupAudioInput() {
+        // SettingsViewModel에서 설정값 가져오기 (없으면 기본값)
+        let audioBitrate = settingsViewModel?.getAudioBitrate() ?? defaultAudioBitrate
+
         let audioSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatMPEG4AAC,
             AVSampleRateKey: defaultSampleRate,
             AVNumberOfChannelsKey: defaultChannels,
-            AVEncoderBitRateKey: defaultAudioBitrate
+            AVEncoderBitRateKey: audioBitrate
         ]
 
         audioInput = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
@@ -135,7 +138,7 @@ class RecordingManager: NSObject, ObservableObject {
 
         if let audioInput = audioInput, assetWriter?.canAdd(audioInput) == true {
             assetWriter?.add(audioInput)
-            print("✅ [RecordingManager] 오디오 입력 추가 완료")
+            print("✅ [RecordingManager] 오디오 입력 추가 완료 - \(audioBitrate/1000)kbps")
         }
     }
 

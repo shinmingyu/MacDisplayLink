@@ -34,12 +34,12 @@ struct StorageSettingsTab: View {
                 HStack {
                     Text("형식")
                     Spacer()
-                    Text("Recording_yyyyMMdd_HHmmss.mp4")
+                    Text("MacDisplayLink_yyyyMMdd_HHmmss.mp4")
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 }
 
-                Text("예시: Recording_20251221_143052.mp4")
+                Text("예시: MacDisplayLink_20251221_143052.mp4")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -53,7 +53,7 @@ struct StorageSettingsTab: View {
     private func getRecordingsURL() -> URL {
         // App Sandbox 환경에서 접근 가능한 Documents 디렉터리 사용
         let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsURL.appendingPathComponent("Recordings")
+        return documentsURL.appendingPathComponent("MacDisplayLink")
     }
 
     private func updateDisplayPath() {

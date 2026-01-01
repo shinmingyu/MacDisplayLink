@@ -25,10 +25,12 @@ class DeviceViewModel: ObservableObject {
     private let deviceManager: DeviceManager
     private let captureSessionManager: CaptureSessionManager
     private var cancellables = Set<AnyCancellable>()
+    private weak var settingsViewModel: SettingsViewModel?
 
-    init(deviceManager: DeviceManager = DeviceManager(), recordingManager: RecordingManager? = nil) {
+    init(deviceManager: DeviceManager = DeviceManager(), recordingManager: RecordingManager? = nil, settingsViewModel: SettingsViewModel? = nil) {
         self.deviceManager = deviceManager
         self.captureSessionManager = CaptureSessionManager(recordingManager: recordingManager)
+        self.settingsViewModel = settingsViewModel
 
         // 디바이스 목록 변경 감지
         deviceManager.$captureDevices
@@ -50,6 +52,9 @@ class DeviceViewModel: ObservableObject {
         deviceManager.$availableFormats
             .sink { [weak self] formats in
                 self?.availableFormats = formats
+
+                // UserDefaults에 저장된 입력 포맷 복원
+                self?.restoreSavedInputFormat()
             }
             .store(in: &cancellables)
 
@@ -125,5 +130,18 @@ class DeviceViewModel: ObservableObject {
     func applyInputFormat(_ formatId: String?) {
         let format = availableFormats.first { $0.id == formatId }
         captureSessionManager.applyVideoFormat(format)
+    }
+
+    /// 저장된 입력 포맷 복원
+    private func restoreSavedInputFormat() {
+        guard !availableFormats.isEmpty,
+              let savedFormatId = settingsViewModel?.selectedInputFormatId,
+              availableFormats.contains(where: { $0.id == savedFormatId }) else {
+            return
+        }
+
+        // 저장된 포맷 적용
+        print("🔄 [DeviceViewModel] 저장된 입력 포맷 복원: \(savedFormatId)")
+        applyInputFormat(savedFormatId)
     }
 }

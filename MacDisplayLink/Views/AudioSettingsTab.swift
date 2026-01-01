@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 struct AudioSettingsTab: View {
     @ObservedObject var viewModel: SettingsViewModel
+    @ObservedObject var deviceViewModel: DeviceViewModel
 
     let audioBitrateOptions = [128, 192, 256, 320]
 
@@ -18,7 +20,7 @@ struct AudioSettingsTab: View {
                 HStack {
                     Text("오디오 소스")
                     Spacer()
-                    Text("캡쳐 카드 (시뮬레이션)")
+                    Text(audioSourceName)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -36,9 +38,18 @@ struct AudioSettingsTab: View {
         }
         .formStyle(.grouped)
     }
+
+    /// 오디오 소스 이름
+    private var audioSourceName: String {
+        if let device = deviceViewModel.selectedDevice {
+            return device.localizedName
+        } else {
+            return "연결된 디바이스 없음"
+        }
+    }
 }
 
 #Preview {
-    AudioSettingsTab(viewModel: SettingsViewModel())
+    AudioSettingsTab(viewModel: SettingsViewModel(), deviceViewModel: DeviceViewModel())
         .frame(width: 500, height: 400)
 }

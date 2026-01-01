@@ -21,7 +21,7 @@ struct MainView: View {
 
         _settingsViewModel = StateObject(wrappedValue: settingsVM)
         _recordingViewModel = StateObject(wrappedValue: recordingVM)
-        _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(recordingManager: recordingVM.getRecordingManager()))
+        _deviceViewModel = StateObject(wrappedValue: DeviceViewModel(recordingManager: recordingVM.getRecordingManager(), settingsViewModel: settingsVM))
     }
 
     var body: some View {

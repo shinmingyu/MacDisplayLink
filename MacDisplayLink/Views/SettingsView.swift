@@ -24,7 +24,7 @@ struct SettingsView: View {
                     Label("영상", systemImage: "video.fill")
                 }
 
-            AudioSettingsTab(viewModel: settingsViewModel)
+            AudioSettingsTab(viewModel: settingsViewModel, deviceViewModel: deviceViewModel)
                 .tabItem {
                     Label("오디오", systemImage: "speaker.wave.2.fill")
                 }
